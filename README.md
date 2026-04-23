@@ -27,7 +27,7 @@ Add to `.mcp.json` (project or `~/.claude/settings.json`):
 }
 ```
 
-## Tools (17 total)
+## Tools (22 total)
 
 ### Inbox
 - **get_inbox_tasks** — List tasks from system, private, or work inbox (paginated)
@@ -39,12 +39,14 @@ Add to `.mcp.json` (project or `~/.claude/settings.json`):
 - **delete_task** — Delete a task
 - **update_task** — Modify name, note, tags, dates, flagged status
 - **create_subtasks** — Break a task into subtasks
+- **search_tasks** — Search incomplete tasks by name
 
 ### Projects
 - **get_projects** — List projects filtered by status
 - **get_project_tasks** — List tasks within a project (paginated)
 - **create_project** — Create project with optional initial tasks
 - **update_project** — Change status, review interval, name, note
+- **get_folders** — List folders (areas of responsibility) with active project counts
 
 ### Tags
 - **get_tags** — List tags (with limit)
@@ -57,6 +59,9 @@ Add to `.mcp.json` (project or `~/.claude/settings.json`):
 - **get_overdue_tasks** — Tasks past due date
 - **get_forecast** — Tasks due in the next N days
 - **get_completed_tasks** — Tasks completed since a given date
+- **get_flagged_tasks** — List all flagged incomplete tasks (your "hot list")
+- **get_available_tasks** — List actionable tasks in a project (not blocked, not deferred)
+- **get_tasks_by_tag** — List incomplete tasks matching any of the given tags (e.g., @waiting_for, @errands)
 
 ## Development
 
