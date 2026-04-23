@@ -20,11 +20,15 @@ Claude Code <-> MCP Server (TypeScript/Node) <-> osascript <-> OmniFocus
 
 ### Inbox Processing
 
+The user has multiple inboxes: the OmniFocus system inbox plus "private inbox" and "work inbox" projects that function as additional inboxes. All inbox tools accept a `source` parameter to select which inbox to process.
+
 | Tool | Description | Parameters |
 |------|-------------|------------|
-| `get_inbox_tasks` | List inbox items with pagination | `offset?`, `limit?` (default 20) |
+| `get_inbox_tasks` | List inbox items with pagination | `source?` ("inbox", "private", "work"; default "inbox"), `offset?`, `limit?` (default 20) |
 | `process_inbox_task` | Move inbox task to project, assign tags, set dates | `taskId`, `projectId?`, `tags?`, `deferDate?`, `dueDate?`, `flagged?` |
 | `quick_entry` | Create a new task | `name`, `note?`, `projectId?`, `tags?`, `deferDate?`, `dueDate?`, `flagged?` |
+
+When `source` is "private" or "work", `get_inbox_tasks` reads tasks from the corresponding project instead of the OmniFocus system inbox.
 
 ### Task Management
 
