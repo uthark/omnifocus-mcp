@@ -112,9 +112,25 @@ omnifocus-mcp/
 
 ## Testing
 
-- **Unit tests:** Test TypeScript parsing/formatting logic (given AppleScript output string, verify parsed JSON). Test input validation. Run without OmniFocus.
-- **Manual integration testing:** Run MCP server via Claude Code, call tools against real OmniFocus data.
-- No automated integration tests — AppleScript bridge requires a live OmniFocus instance with real data.
+**Approach: TDD where feasible.** Write tests before implementation for all pure logic. The AppleScript execution boundary is the only part that can't be unit-tested.
+
+### What gets TDD treatment
+
+- **AppleScript output parsing** — given a raw delimited string from osascript, does it produce the correct structured object? Write the parser test first, then the parser.
+- **Input validation** — given tool parameters, are invalid inputs rejected with clear errors? Write validation tests first, then the validators.
+- **AppleScript template generation** — given tool parameters, does it produce the correct AppleScript string? Write template tests first, then the templates.
+- **Edge cases** — empty inbox, no projects, missing optional fields, special characters in task names.
+
+### What doesn't get TDD
+
+- **`executor.ts`** — the thin `execFile` wrapper that actually shells out to `osascript`. Tested manually against real OmniFocus.
+- **End-to-end integration** — requires a live OmniFocus instance with real data.
+
+### Test tooling
+
+- **Vitest** as the test runner (fast, TypeScript-native, good DX).
+- Tests live alongside source: `src/applescript/__tests__/`, `src/tools/__tests__/`.
+- `npm test` runs the full unit suite.
 
 ## Intended Workflow
 
