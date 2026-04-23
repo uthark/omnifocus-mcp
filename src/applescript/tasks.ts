@@ -1,4 +1,5 @@
 import { escapeForAppleScript } from './executor.js';
+import { buildPaginatedTaskQuery } from './parser.js';
 
 export function buildCompleteTaskScript(taskId: string): string {
   const escaped = escapeForAppleScript(taskId);
@@ -91,4 +92,12 @@ export function buildCreateSubtasksScript(
   lines.push(`  end tell`);
   lines.push(`end tell`);
   return lines.join('\n');
+}
+
+export function buildSearchTasksScript(query: string, limit: number): string {
+  const escaped = escapeForAppleScript(query);
+  return buildPaginatedTaskQuery(
+    `flattened tasks whose completed is false and name contains "${escaped}"`,
+    limit,
+  );
 }

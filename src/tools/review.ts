@@ -8,6 +8,9 @@ import {
   buildGetOverdueTasksScript,
   buildGetForecastScript,
   buildGetCompletedTasksScript,
+  buildGetTasksByTagScript,
+  buildGetAvailableTasksScript,
+  buildGetFlaggedTasksScript,
 } from '../applescript/review.js';
 import { parseProjects, parsePaginatedTasks, parseStaleTasks } from '../applescript/parser.js';
 
@@ -86,6 +89,47 @@ export function registerReviewTools(server: McpServer): void {
     },
     async ({ since, limit }) => {
       const output = await runAppleScript(buildGetCompletedTasksScript(since, limit));
+      const result = parsePaginatedTasks(output);
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  server.tool(
+    'get_tasks_by_tag',
+    'List incomplete tasks that have any of the specified tags. Use this to review GTD context lists like @waiting_for, @errands, @agenda.',
+    {
+      tagNames: z.array(z.string()).min(1).describe('Tag names to filter by (returns tasks matching ANY of these tags)'),
+      limit: z.number().int().min(1).max(100).default(20).describe('Max tasks to return'),
+    },
+    async ({ tagNames, limit }) => {
+      const output = await runAppleScript(buildGetTasksByTagScript(tagNames, limit), 30_000);
+      const result = parsePaginatedTasks(output);
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  server.tool(
+    'get_available_tasks',
+    'List tasks in a project that are currently actionable (not completed, not blocked, not deferred to the future)',
+    {
+      projectId: z.string().describe('OmniFocus project ID to scan'),
+      limit: z.number().int().min(1).max(100).default(20).describe('Max tasks to return'),
+    },
+    async ({ projectId, limit }) => {
+      const output = await runAppleScript(buildGetAvailableTasksScript(projectId, limit), 30_000);
+      const result = parsePaginatedTasks(output);
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  server.tool(
+    'get_flagged_tasks',
+    'List all flagged incomplete tasks (your "hot list" / next actions)',
+    {
+      limit: z.number().int().min(1).max(100).default(20).describe('Max tasks to return'),
+    },
+    async ({ limit }) => {
+      const output = await runAppleScript(buildGetFlaggedTasksScript(limit));
       const result = parsePaginatedTasks(output);
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     },

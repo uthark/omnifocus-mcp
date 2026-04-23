@@ -34,6 +34,12 @@ export interface StaleTask {
   modificationDate: string | null;
 }
 
+export interface OFFolder {
+  id: string;
+  name: string;
+  projectCount: number;
+}
+
 export interface PaginatedResult<T> {
   total: number;
   items: T[];

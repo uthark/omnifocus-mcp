@@ -83,6 +83,27 @@ export function buildCreateProjectScript(
   return lines.join('\n');
 }
 
+export function buildGetFoldersScript(limit: number): string {
+  return `
+tell application "OmniFocus"
+  tell default document
+    set output to ""
+    set allFolders to folders
+    set count_ to 0
+    repeat with f in allFolders
+      set folderId to id of f
+      set folderName to my escapeField(name of f)
+      set projCount to count of (projects of f whose status is active)
+      set output to output & folderId & tab & folderName & tab & projCount & linefeed
+      set count_ to count_ + 1
+      if count_ >= ${limit} then exit repeat
+    end repeat
+    return output
+  end tell
+end tell
+${APPLESCRIPT_HELPERS}`;
+}
+
 export function buildUpdateProjectScript(
   projectId: string,
   options: { status?: string; reviewInterval?: number; name?: string; note?: string },

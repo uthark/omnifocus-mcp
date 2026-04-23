@@ -4,6 +4,7 @@ import {
   buildDeleteTaskScript,
   buildUpdateTaskScript,
   buildCreateSubtasksScript,
+  buildSearchTasksScript,
 } from '../tasks.js';
 
 describe('buildCompleteTaskScript', () => {
@@ -63,5 +64,32 @@ describe('buildCreateSubtasksScript', () => {
     expect(script).toContain('Subtask 1');
     expect(script).toContain('Subtask 2');
     expect(script).toContain('Details here');
+  });
+});
+
+describe('buildSearchTasksScript', () => {
+  it('contains the search query in the output', () => {
+    const script = buildSearchTasksScript('groceries', 20);
+    expect(script).toContain('groceries');
+  });
+
+  it('contains name contains whose clause', () => {
+    const script = buildSearchTasksScript('groceries', 20);
+    expect(script).toContain('name contains');
+  });
+
+  it('contains completed is false filter', () => {
+    const script = buildSearchTasksScript('groceries', 20);
+    expect(script).toContain('completed is false');
+  });
+
+  it('escapes special characters in the query', () => {
+    const script = buildSearchTasksScript('task "with" quotes', 10);
+    expect(script).toContain('task \\"with\\" quotes');
+  });
+
+  it('contains TOTAL: output format marker', () => {
+    const script = buildSearchTasksScript('groceries', 20);
+    expect(script).toContain('TOTAL:');
   });
 });

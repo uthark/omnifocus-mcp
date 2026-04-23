@@ -4,8 +4,9 @@ import {
   buildGetProjectTasksScript,
   buildCreateProjectScript,
   buildUpdateProjectScript,
+  buildGetFoldersScript,
 } from '../projects.js';
-import { parseProjects, parsePaginatedTasks } from '../parser.js';
+import { parseProjects, parsePaginatedTasks, parseFolders } from '../parser.js';
 
 describe('buildGetProjectsScript', () => {
   it('queries all active projects by default', () => {
@@ -82,5 +83,39 @@ describe('parsePaginatedTasks (project context)', () => {
     expect(result.total).toBe(2);
     expect(result.items).toHaveLength(1);
     expect(result.items[0].name).toBe('Task 1');
+  });
+});
+
+describe('buildGetFoldersScript', () => {
+  it('queries folders with their properties', () => {
+    const script = buildGetFoldersScript(50);
+    expect(script).toContain('folders');
+    expect(script).toContain('escapeField');
+  });
+
+  it('respects limit', () => {
+    const script = buildGetFoldersScript(5);
+    expect(script).toContain('5');
+  });
+});
+
+describe('parseFolders', () => {
+  it('parses folder records', () => {
+    const output = 'folder1\tPersonal\t3\nfolder2\tWork\t7';
+    const folders = parseFolders(output);
+    expect(folders).toEqual([
+      { id: 'folder1', name: 'Personal', projectCount: 3 },
+      { id: 'folder2', name: 'Work', projectCount: 7 },
+    ]);
+  });
+
+  it('returns empty array for empty output', () => {
+    expect(parseFolders('')).toEqual([]);
+  });
+
+  it('unescapes folder names', () => {
+    const output = 'f1\tName\\nWith\\nNewlines\t2';
+    const folders = parseFolders(output);
+    expect(folders[0].name).toBe('Name\nWith\nNewlines');
   });
 });

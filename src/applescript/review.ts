@@ -95,3 +95,67 @@ export function buildGetCompletedTasksScript(since: string, limit: number): stri
     `set sinceDate to date "${escaped}"`,
   );
 }
+
+export function buildGetFlaggedTasksScript(limit: number): string {
+  return buildPaginatedTaskQuery(
+    'flattened tasks whose completed is false and flagged is true',
+    limit,
+  );
+}
+
+export function buildGetAvailableTasksScript(projectId: string, limit: number): string {
+  const escaped = escapeForAppleScript(projectId);
+  return `
+tell application "OmniFocus"
+  tell default document
+    set now to current date
+    set proj to first flattened project whose id is "${escaped}"
+    set projTasks to flattened tasks of proj whose completed is false and blocked is false
+    set matchCount to 0
+    set results to ""
+    repeat with t in projTasks
+      set effDefer to effective defer date of t
+      if effDefer is missing value or effDefer < now then
+        set matchCount to matchCount + 1
+        set results to results & my taskRecord(t) & linefeed
+        if matchCount = ${limit} then exit repeat
+      end if
+    end repeat
+    set output to "TOTAL:" & matchCount & linefeed & results
+    return output
+  end tell
+end tell
+${APPLESCRIPT_HELPERS}`;
+}
+
+export function buildGetTasksByTagScript(tagNames: string[], limit: number): string {
+  const escapedTags = tagNames.map((t) => `"${escapeForAppleScript(t)}"`).join(', ');
+  return `
+tell application "OmniFocus"
+  tell default document
+    set targetTagNames to {${escapedTags}}
+    set seenIds to {}
+    set matchCount to 0
+    set results to ""
+    repeat with tagName in targetTagNames
+      set tg to first flattened tag whose name is (tagName as text)
+      set tagTasks to remaining tasks of tg
+      repeat with t in tagTasks
+        set tid to id of t
+        if seenIds does not contain tid then
+          set end of seenIds to tid
+          set matchCount to matchCount + 1
+          if matchCount > ${limit} then
+            -- already have enough results, just keep counting
+          else
+            set results to results & my taskRecord(t) & linefeed
+          end if
+        end if
+      end repeat
+    end repeat
+    set output to "TOTAL:" & matchCount & linefeed & results
+    return output
+  end tell
+end tell
+${APPLESCRIPT_HELPERS}`;
+}

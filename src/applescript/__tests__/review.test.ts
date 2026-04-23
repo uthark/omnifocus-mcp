@@ -6,6 +6,9 @@ import {
   buildGetOverdueTasksScript,
   buildGetForecastScript,
   buildGetCompletedTasksScript,
+  buildGetFlaggedTasksScript,
+  buildGetAvailableTasksScript,
+  buildGetTasksByTagScript,
 } from '../review.js';
 import { parseProjects, parsePaginatedTasks } from '../parser.js';
 
@@ -53,6 +56,79 @@ describe('buildGetCompletedTasksScript', () => {
     const script = buildGetCompletedTasksScript('2026-04-15', 10);
     expect(script).toContain('2026-04-15');
     expect(script).toContain('completion date');
+  });
+});
+
+describe('buildGetFlaggedTasksScript', () => {
+  it('contains flagged is true', () => {
+    const script = buildGetFlaggedTasksScript(15);
+    expect(script).toContain('flagged is true');
+  });
+
+  it('contains completed is false', () => {
+    const script = buildGetFlaggedTasksScript(15);
+    expect(script).toContain('completed is false');
+  });
+
+  it('respects the limit parameter', () => {
+    const script = buildGetFlaggedTasksScript(42);
+    expect(script).toContain('42');
+  });
+});
+
+describe('buildGetAvailableTasksScript', () => {
+  it('filters by blocked and effective defer date', () => {
+    const script = buildGetAvailableTasksScript('proj123', 10);
+    expect(script).toContain('blocked is false');
+    expect(script).toContain('effective defer date');
+  });
+
+  it('scopes query to a project', () => {
+    const script = buildGetAvailableTasksScript('proj123', 10);
+    expect(script).toContain('proj123');
+    expect(script).toContain('flattened tasks of proj');
+  });
+
+  it('contains completed is false', () => {
+    const script = buildGetAvailableTasksScript('proj123', 10);
+    expect(script).toContain('completed is false');
+  });
+
+  it('respects the limit parameter', () => {
+    const script = buildGetAvailableTasksScript('proj123', 37);
+    expect(script).toContain('37');
+  });
+});
+
+describe('buildGetTasksByTagScript', () => {
+  it('includes all provided tag names in the script', () => {
+    const script = buildGetTasksByTagScript(['Work', 'Errands', 'Home'], 10);
+    expect(script).toContain('Work');
+    expect(script).toContain('Errands');
+    expect(script).toContain('Home');
+  });
+
+  it('escapes special characters in tag names', () => {
+    const script = buildGetTasksByTagScript(['tag with "quotes"'], 10);
+    expect(script).toContain('\\"quotes\\"');
+  });
+
+  it('produces AppleScript list syntax with curly braces', () => {
+    const script = buildGetTasksByTagScript(['Tag1', 'Tag2'], 10);
+    expect(script).toContain('{');
+    expect(script).toContain('}');
+  });
+
+  it('queries remaining tasks from each tag', () => {
+    const script = buildGetTasksByTagScript(['Work'], 10);
+    expect(script).toContain('remaining tasks of tg');
+    expect(script).toContain('flattened tag');
+  });
+
+  it('contains the APPLESCRIPT_HELPERS', () => {
+    const script = buildGetTasksByTagScript(['Work'], 10);
+    expect(script).toContain('escapeField');
+    expect(script).toContain('taskRecord');
   });
 });
 

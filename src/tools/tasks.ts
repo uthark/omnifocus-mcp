@@ -6,7 +6,9 @@ import {
   buildDeleteTaskScript,
   buildUpdateTaskScript,
   buildCreateSubtasksScript,
+  buildSearchTasksScript,
 } from '../applescript/tasks.js';
+import { parsePaginatedTasks } from '../applescript/parser.js';
 
 export function registerTaskTools(server: McpServer): void {
   server.tool(
@@ -61,6 +63,20 @@ export function registerTaskTools(server: McpServer): void {
       const output = await runAppleScript(buildCreateSubtasksScript(taskId, subtasks));
       const ids = output.trim().split(',').filter((id) => id !== '');
       return { content: [{ type: 'text', text: JSON.stringify({ success: true, subtaskIds: ids }) }] };
+    },
+  );
+
+  server.tool(
+    'search_tasks',
+    'Search incomplete tasks by name. Use this to find tasks when you know part of the name.',
+    {
+      query: z.string().describe('Text to search for in task names (case-insensitive contains match)'),
+      limit: z.number().int().min(1).max(100).default(20).describe('Max tasks to return'),
+    },
+    async ({ query, limit }) => {
+      const output = await runAppleScript(buildSearchTasksScript(query, limit));
+      const result = parsePaginatedTasks(output);
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     },
   );
 }

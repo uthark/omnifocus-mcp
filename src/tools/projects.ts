@@ -6,8 +6,9 @@ import {
   buildGetProjectTasksScript,
   buildCreateProjectScript,
   buildUpdateProjectScript,
+  buildGetFoldersScript,
 } from '../applescript/projects.js';
-import { parseProjects, parsePaginatedTasks } from '../applescript/parser.js';
+import { parseProjects, parsePaginatedTasks, parseFolders } from '../applescript/parser.js';
 
 export function registerProjectTools(server: McpServer): void {
   server.tool(
@@ -71,6 +72,19 @@ export function registerProjectTools(server: McpServer): void {
     async ({ projectId, status, reviewInterval, name, note }) => {
       const output = await runAppleScript(buildUpdateProjectScript(projectId, { status, reviewInterval, name, note }));
       return { content: [{ type: 'text', text: JSON.stringify({ success: true, projectId: output.trim() }) }] };
+    },
+  );
+
+  server.tool(
+    'get_folders',
+    'List folders (areas of responsibility) with their active project counts',
+    {
+      limit: z.number().int().min(1).max(100).default(50).describe('Max folders to return'),
+    },
+    async ({ limit }) => {
+      const output = await runAppleScript(buildGetFoldersScript(limit));
+      const folders = parseFolders(output);
+      return { content: [{ type: 'text', text: JSON.stringify(folders, null, 2) }] };
     },
   );
 }

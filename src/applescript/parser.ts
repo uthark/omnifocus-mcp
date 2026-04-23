@@ -1,4 +1,4 @@
-import type { OFProject, OFTask, StaleTask, PaginatedResult } from '../types.js';
+import type { OFFolder, OFProject, OFTask, StaleTask, PaginatedResult } from '../types.js';
 
 export function unescapeField(value: string): string {
   if (value === '') return '';
@@ -153,6 +153,17 @@ export function parseProjects(output: string): OFProject[] {
       taskCount: parseInt(fields[4] ?? '0', 10),
       nextReviewDate: fields[5] || null,
       reviewInterval: parseInt(fields[6] ?? '0', 10),
+    };
+  });
+}
+
+export function parseFolders(output: string): OFFolder[] {
+  return splitRecords(output).map((line) => {
+    const fields = splitFields(line);
+    return {
+      id: fields[0] ?? '',
+      name: unescapeField(fields[1] ?? ''),
+      projectCount: parseInt(fields[2] ?? '0', 10),
     };
   });
 }
