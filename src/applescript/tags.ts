@@ -2,13 +2,17 @@ import { escapeForAppleScript } from './executor.js';
 import { splitRecords, splitFields, unescapeField } from './parser.js';
 import type { OFTag } from '../types.js';
 
-export function buildGetTagsScript(): string {
+export function buildGetTagsScript(limit: number): string {
   return `
 tell application "OmniFocus"
   tell default document
     set output to ""
     set allTags to flattened tags
-    repeat with t in allTags
+    set tagCount to count of allTags
+    set maxCount to tagCount
+    if maxCount > ${limit} then set maxCount to ${limit}
+    repeat with i from 1 to maxCount
+      set t to item i of allTags
       set tagId to id of t
       set tagName to name of t
       set escapedName to my escapeField(tagName)

@@ -10,10 +10,12 @@ import {
 export function registerTagTools(server: McpServer): void {
   server.tool(
     'get_tags',
-    'List all tags in OmniFocus',
-    {},
-    async () => {
-      const output = await runAppleScript(buildGetTagsScript());
+    'List tags in OmniFocus',
+    {
+      limit: z.number().int().min(1).max(500).default(50).describe('Max tags to return'),
+    },
+    async ({ limit }) => {
+      const output = await runAppleScript(buildGetTagsScript(limit));
       const tags = parseTagsOutput(output);
       return {
         content: [{ type: 'text', text: JSON.stringify(tags, null, 2) }],

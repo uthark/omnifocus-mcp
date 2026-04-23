@@ -83,9 +83,10 @@ on formatDate(theDate)
   set y to year of theDate
   set m to (month of theDate as integer)
   set d to day of theDate
-  set h to hours of theDate
-  set min to minutes of theDate
-  set s to seconds of theDate
+  set t to time of theDate
+  set h to t div 3600
+  set min to (t mod 3600) div 60
+  set s to t mod 60
   set pad to "0"
   set mStr to text -2 thru -1 of (pad & m)
   set dStr to text -2 thru -1 of (pad & d)
@@ -96,30 +97,39 @@ on formatDate(theDate)
 end formatDate
 
 on getTagNames(t)
-  set tagNames to ""
-  repeat with tg in tags of t
-    if tagNames is not "" then set tagNames to tagNames & ","
-    set tagNames to tagNames & name of tg
-  end repeat
-  return tagNames
+  using terms from application "OmniFocus"
+    set tagNames to ""
+    repeat with tg in tags of t
+      if tagNames is not "" then set tagNames to tagNames & ","
+      set tagNames to tagNames & name of tg
+    end repeat
+    return tagNames
+  end using terms from
 end getTagNames
 
 on taskRecord(t)
-  set taskId to id of t
-  set taskName to my escapeField(name of t)
-  set taskNote to my escapeField(note of t)
-  set cDate to my formatDate(creation date of t)
-  set mDate to my formatDate(modification date of t)
-  set duDate to my formatDate(due date of t)
-  set defDate to my formatDate(defer date of t)
-  set isFlagged to flagged of t
-  set isCompleted to completed of t
-  set compDate to my formatDate(completion date of t)
-  try
-    set projName to my escapeField(name of containing project of t)
-  on error
-    set projName to ""
-  end try
-  set tagStr to my getTagNames(t)
-  return taskId & tab & taskName & tab & taskNote & tab & cDate & tab & mDate & tab & duDate & tab & defDate & tab & isFlagged & tab & isCompleted & tab & compDate & tab & projName & tab & tagStr
+  using terms from application "OmniFocus"
+    set taskId to id of t
+    set taskName to my escapeField(name of t)
+    set taskNote to my escapeField(note of t)
+    set cDateVal to creation date of t
+    set cDate to my formatDate(cDateVal)
+    set mDateVal to modification date of t
+    set mDate to my formatDate(mDateVal)
+    set duDateVal to due date of t
+    set duDate to my formatDate(duDateVal)
+    set defDateVal to defer date of t
+    set defDate to my formatDate(defDateVal)
+    set isFlagged to flagged of t
+    set isCompleted to completed of t
+    set compDateVal to completion date of t
+    set compDate to my formatDate(compDateVal)
+    try
+      set projName to my escapeField(name of containing project of t)
+    on error
+      set projName to ""
+    end try
+    set tagStr to my getTagNames(t)
+    return taskId & tab & taskName & tab & taskNote & tab & cDate & tab & mDate & tab & duDate & tab & defDate & tab & isFlagged & tab & isCompleted & tab & compDate & tab & projName & tab & tagStr
+  end using terms from
 end taskRecord`;

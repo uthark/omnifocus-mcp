@@ -10,6 +10,7 @@ import {
   buildGetCompletedTasksScript,
   parseProjectsForReviewOutput,
   parseTaskListOutput,
+  parseStaleTasksOutput,
 } from '../applescript/review.js';
 
 export function registerReviewTools(server: McpServer): void {
@@ -17,7 +18,7 @@ export function registerReviewTools(server: McpServer): void {
     'get_projects_due_for_review',
     'List projects that are past their review date',
     {
-      limit: z.number().int().min(1).max(100).default(20).describe('Max projects to return'),
+      limit: z.number().int().min(1).max(100).default(10).describe('Max projects to return'),
     },
     async ({ limit }) => {
       const output = await runAppleScript(buildGetProjectsDueForReviewScript(limit));
@@ -41,10 +42,11 @@ export function registerReviewTools(server: McpServer): void {
     'Find tasks not modified for a long time (potential cleanup candidates)',
     {
       daysSinceModified: z.number().int().min(1).default(30).describe('Tasks not modified in this many days'),
+      limit: z.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
     },
-    async ({ daysSinceModified }) => {
-      const output = await runAppleScript(buildGetStaleTasksScript(daysSinceModified));
-      const result = parseTaskListOutput(output);
+    async ({ daysSinceModified, limit }) => {
+      const output = await runAppleScript(buildGetStaleTasksScript(daysSinceModified, limit), 30_000);
+      const result = parseStaleTasksOutput(output);
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     },
   );
@@ -53,7 +55,7 @@ export function registerReviewTools(server: McpServer): void {
     'get_overdue_tasks',
     'List tasks that are past their due date',
     {
-      limit: z.number().int().min(1).max(100).default(20).describe('Max tasks to return'),
+      limit: z.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
     },
     async ({ limit }) => {
       const output = await runAppleScript(buildGetOverdueTasksScript(limit));
@@ -67,9 +69,10 @@ export function registerReviewTools(server: McpServer): void {
     'Show tasks due today and in the upcoming days',
     {
       days: z.number().int().min(1).max(90).default(7).describe('Number of days to look ahead'),
+      limit: z.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
     },
-    async ({ days }) => {
-      const output = await runAppleScript(buildGetForecastScript(days));
+    async ({ days, limit }) => {
+      const output = await runAppleScript(buildGetForecastScript(days, limit));
       const result = parseTaskListOutput(output);
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     },
@@ -80,9 +83,10 @@ export function registerReviewTools(server: McpServer): void {
     'List tasks completed since a given date (for weekly review summaries)',
     {
       since: z.string().describe('Date string (e.g., "April 15, 2026")'),
+      limit: z.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
     },
-    async ({ since }) => {
-      const output = await runAppleScript(buildGetCompletedTasksScript(since));
+    async ({ since, limit }) => {
+      const output = await runAppleScript(buildGetCompletedTasksScript(since, limit));
       const result = parseTaskListOutput(output);
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     },

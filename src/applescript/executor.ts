@@ -13,9 +13,9 @@ export class AppleScriptError extends Error {
   }
 }
 
-export async function runAppleScript(script: string): Promise<string> {
+export async function runAppleScript(script: string, timeoutMs = 15_000): Promise<string> {
   try {
-    const { stdout } = await execFileAsync('osascript', ['-e', script]);
+    const { stdout } = await execFileAsync('osascript', ['-e', script], { timeout: timeoutMs });
     return stdout.trimEnd();
   } catch (error: unknown) {
     const err = error as { stderr?: string; message?: string };

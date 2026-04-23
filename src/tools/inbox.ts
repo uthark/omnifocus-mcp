@@ -17,7 +17,7 @@ export function registerInboxTools(server: McpServer): void {
     {
       source: z.enum(['inbox', 'private', 'work']).default('inbox').describe('Which inbox to read: "inbox" (system), "private" (11.01 Inbox), "work" (32.01 Work Inbox)'),
       offset: z.number().int().min(0).default(0).describe('Skip first N tasks'),
-      limit: z.number().int().min(1).max(100).default(20).describe('Max tasks to return'),
+      limit: z.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
     },
     async ({ source, offset, limit }) => {
       const inboxConfig = INBOX_SOURCES[source];

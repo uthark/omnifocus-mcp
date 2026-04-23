@@ -16,7 +16,7 @@ export function registerProjectTools(server: McpServer): void {
     'List projects with status, task counts, and review dates',
     {
       status: z.enum(['active', 'on hold', 'done', 'dropped']).default('active').describe('Filter by project status'),
-      limit: z.number().int().min(1).max(500).default(100).describe('Max projects to return'),
+      limit: z.number().int().min(1).max(500).default(10).describe('Max projects to return'),
     },
     async ({ status, limit }) => {
       const output = await runAppleScript(buildGetProjectsScript({ status, limit }));
@@ -31,7 +31,7 @@ export function registerProjectTools(server: McpServer): void {
     {
       projectId: z.string().describe('OmniFocus project ID'),
       offset: z.number().int().min(0).default(0).describe('Skip first N tasks'),
-      limit: z.number().int().min(1).max(100).default(20).describe('Max tasks to return'),
+      limit: z.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
     },
     async ({ projectId, offset, limit }) => {
       const output = await runAppleScript(buildGetProjectTasksScript(projectId, offset, limit));

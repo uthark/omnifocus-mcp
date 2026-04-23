@@ -5,7 +5,7 @@ export interface InboxSource {
 
 export const INBOX_SOURCES: Record<string, InboxSource> = {
   inbox: { type: 'system-inbox' },
-  private: { type: 'project', projectName: '11.01 Inbox' },
+  private: { type: 'project', projectName: '---' },
   work: { type: 'project', projectName: '32.01 Work Inbox' },
 };
 
