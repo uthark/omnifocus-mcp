@@ -149,7 +149,7 @@ export function parseProjects(output: string): OFProject[] {
       id: fields[0] ?? '',
       name: unescapeField(fields[1] ?? ''),
       note: unescapeField(fields[2] ?? ''),
-      status: (fields[3] ?? 'active') as OFProject['status'],
+      status: ((fields[3] ?? 'active').replace(' status', '')) as OFProject['status'],
       taskCount: parseInt(fields[4] ?? '0', 10),
       nextReviewDate: fields[5] || null,
       reviewInterval: parseInt(fields[6] ?? '0', 10),
