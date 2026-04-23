@@ -1,6 +1,6 @@
 [tools]
 # https://nodejs.org/en/download/releases
-node = "22"
+node = "24"
 # https://github.com/pre-commit/pre-commit/releases
 pre-commit = "4.5.1"
 
