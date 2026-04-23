@@ -39,13 +39,14 @@ export function registerReviewTools(server: McpServer): void {
 
   server.tool(
     'get_stale_tasks',
-    'Find tasks not modified for a long time (potential cleanup candidates)',
+    'Find tasks in a project not modified for a long time (potential cleanup candidates)',
     {
+      projectId: z.string().describe('OmniFocus project ID to scan'),
       daysSinceModified: z.number().int().min(1).default(30).describe('Tasks not modified in this many days'),
       limit: z.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
     },
-    async ({ daysSinceModified, limit }) => {
-      const output = await runAppleScript(buildGetStaleTasksScript(daysSinceModified, limit), 30_000);
+    async ({ projectId, daysSinceModified, limit }) => {
+      const output = await runAppleScript(buildGetStaleTasksScript(projectId, daysSinceModified, limit));
       const result = parseStaleTasksOutput(output);
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     },

@@ -54,29 +54,25 @@ tell application "OmniFocus"
 end tell`;
 }
 
-export function buildGetStaleTasksScript(daysSinceModified: number, limit: number): string {
+export function buildGetStaleTasksScript(projectId: string, daysSinceModified: number, limit: number): string {
+  const escaped = escapeForAppleScript(projectId);
   return `
 tell application "OmniFocus"
   tell default document
     set cutoffDate to (current date) - (${daysSinceModified} * days)
-    set allTasks to flattened tasks whose completed is false
-    set allIds to id of allTasks
-    set allNames to name of allTasks
-    set allModDates to modification date of allTasks
-    set output to ""
-    set matchCount to 0
-    repeat with i from 1 to count of allIds
-      set modDateVal to item i of allModDates
-      if modDateVal is not missing value and modDateVal < cutoffDate then
-        set taskId to item i of allIds
-        set taskName to my escapeField(item i of allNames)
-        set mDate to my formatDate(modDateVal)
-        set output to output & taskId & tab & taskName & tab & mDate & linefeed
-        set matchCount to matchCount + 1
-        if matchCount >= ${limit} then exit repeat
-      end if
+    set proj to first flattened project whose id is "${escaped}"
+    set matchingTasks to (flattened tasks of proj whose completed is false and modification date < cutoffDate)
+    set matchCount to count of matchingTasks
+    set output to "TOTAL:" & matchCount & linefeed
+    set maxCount to matchCount
+    if maxCount > ${limit} then set maxCount to ${limit}
+    repeat with i from 1 to maxCount
+      set t to item i of matchingTasks
+      set taskId to id of t
+      set taskName to my escapeField(name of t)
+      set mDate to my formatDate(modification date of t)
+      set output to output & taskId & tab & taskName & tab & mDate & linefeed
     end repeat
-    set output to "TOTAL:" & matchCount & linefeed & output
     return output
   end tell
 end tell
