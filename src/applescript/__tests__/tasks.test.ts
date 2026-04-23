@@ -11,8 +11,7 @@ describe('buildCompleteTaskScript', () => {
   it('marks task as completed by ID', () => {
     const script = buildCompleteTaskScript('task123');
     expect(script).toContain('task123');
-    expect(script).toContain('set completed of');
-    expect(script).toContain('true');
+    expect(script).toContain('mark complete');
   });
 });
 

@@ -7,7 +7,7 @@ export function buildCompleteTaskScript(taskId: string): string {
 tell application "OmniFocus"
   tell default document
     set t to first flattened task whose id is "${escaped}"
-    set completed of t to true
+    mark complete t
     return id of t
   end tell
 end tell`;
