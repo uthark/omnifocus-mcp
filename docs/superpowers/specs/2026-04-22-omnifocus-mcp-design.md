@@ -20,7 +20,13 @@ Claude Code <-> MCP Server (TypeScript/Node) <-> osascript <-> OmniFocus
 
 ### Inbox Processing
 
-The user has multiple inboxes: the OmniFocus system inbox plus "private inbox" and "work inbox" projects that function as additional inboxes. All inbox tools accept a `source` parameter to select which inbox to process.
+The user has multiple inboxes: the OmniFocus system inbox plus two projects that function as additional inboxes. The project structure uses Johnny Decimal numbering:
+
+- `"inbox"` — OmniFocus system inbox
+- `"private"` — project `11.01 Inbox` (under `10-19 Life admin : 11 🙋 Me & other living things`)
+- `"work"` — project `32.01 Work Inbox` (under `30-39 Work admin : 32 Inworld`)
+
+All inbox tools accept a `source` parameter to select which inbox to process.
 
 | Tool | Description | Parameters |
 |------|-------------|------------|
@@ -28,7 +34,7 @@ The user has multiple inboxes: the OmniFocus system inbox plus "private inbox" a
 | `process_inbox_task` | Move inbox task to project, assign tags, set dates | `taskId`, `projectId?`, `tags?`, `deferDate?`, `dueDate?`, `flagged?` |
 | `quick_entry` | Create a new task | `name`, `note?`, `projectId?`, `tags?`, `deferDate?`, `dueDate?`, `flagged?` |
 
-When `source` is "private" or "work", `get_inbox_tasks` reads tasks from the corresponding project instead of the OmniFocus system inbox.
+When `source` is "private" or "work", `get_inbox_tasks` reads tasks from the corresponding project instead of the OmniFocus system inbox. The project names are configurable (stored in the server config) so they can be updated if the folder structure changes.
 
 ### Task Management
 
