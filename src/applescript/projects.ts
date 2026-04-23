@@ -37,6 +37,19 @@ end tell
 ${APPLESCRIPT_HELPERS}`;
 }
 
+export function buildGetProjectByNameScript(name: string): string {
+  const escaped = escapeForAppleScript(name);
+  return `
+tell application "OmniFocus"
+  tell default document
+    set p to first flattened project whose name is "${escaped}"
+    set projId to id of p
+    set projName to name of p
+    return projId & tab & projName
+  end tell
+end tell`;
+}
+
 export function buildGetProjectTasksScript(projectId: string, offset: number, limit: number): string {
   const escaped = escapeForAppleScript(projectId);
   return buildOffsetTaskQuery(

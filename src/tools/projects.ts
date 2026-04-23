@@ -3,6 +3,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runAppleScript } from '../applescript/executor.js';
 import {
   buildGetProjectsScript,
+  buildGetProjectByNameScript,
   buildGetProjectTasksScript,
   buildCreateProjectScript,
   buildUpdateProjectScript,
@@ -22,6 +23,19 @@ export function registerProjectTools(server: McpServer): void {
       const output = await runAppleScript(buildGetProjectsScript({ status, limit }));
       const projects = parseProjects(output);
       return { content: [{ type: 'text', text: JSON.stringify(projects, null, 2) }] };
+    },
+  );
+
+  server.tool(
+    'get_project_by_name',
+    'Look up a project ID by name. Use this instead of get_projects when you know the project name.',
+    {
+      name: z.string().describe('Project name to look up'),
+    },
+    async ({ name }) => {
+      const output = await runAppleScript(buildGetProjectByNameScript(name));
+      const [id, projName] = output.split('\t');
+      return { content: [{ type: 'text', text: JSON.stringify({ id, name: projName }) }] };
     },
   );
 
