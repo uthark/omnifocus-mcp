@@ -28,6 +28,12 @@ export interface OFTag {
   name: string;
 }
 
+export interface StaleTask {
+  id: string;
+  name: string;
+  modificationDate: string | null;
+}
+
 export interface PaginatedResult<T> {
   total: number;
   items: T[];

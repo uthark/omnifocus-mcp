@@ -8,10 +8,8 @@ import {
   buildGetOverdueTasksScript,
   buildGetForecastScript,
   buildGetCompletedTasksScript,
-  parseProjectsForReviewOutput,
-  parseTaskListOutput,
-  parseStaleTasksOutput,
 } from '../applescript/review.js';
+import { parseProjects, parsePaginatedTasks, parseStaleTasks } from '../applescript/parser.js';
 
 export function registerReviewTools(server: McpServer): void {
   server.tool(
@@ -22,7 +20,7 @@ export function registerReviewTools(server: McpServer): void {
     },
     async ({ limit }) => {
       const output = await runAppleScript(buildGetProjectsDueForReviewScript(limit));
-      const projects = parseProjectsForReviewOutput(output);
+      const projects = parseProjects(output);
       return { content: [{ type: 'text', text: JSON.stringify(projects, null, 2) }] };
     },
   );
@@ -46,8 +44,8 @@ export function registerReviewTools(server: McpServer): void {
       limit: z.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
     },
     async ({ projectId, daysSinceModified, limit }) => {
-      const output = await runAppleScript(buildGetStaleTasksScript(projectId, daysSinceModified, limit));
-      const result = parseStaleTasksOutput(output);
+      const output = await runAppleScript(buildGetStaleTasksScript(projectId, daysSinceModified, limit), 30_000);
+      const result = parseStaleTasks(output);
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     },
   );
@@ -60,7 +58,7 @@ export function registerReviewTools(server: McpServer): void {
     },
     async ({ limit }) => {
       const output = await runAppleScript(buildGetOverdueTasksScript(limit));
-      const result = parseTaskListOutput(output);
+      const result = parsePaginatedTasks(output);
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     },
   );
@@ -74,7 +72,7 @@ export function registerReviewTools(server: McpServer): void {
     },
     async ({ days, limit }) => {
       const output = await runAppleScript(buildGetForecastScript(days, limit));
-      const result = parseTaskListOutput(output);
+      const result = parsePaginatedTasks(output);
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     },
   );
@@ -88,7 +86,7 @@ export function registerReviewTools(server: McpServer): void {
     },
     async ({ since, limit }) => {
       const output = await runAppleScript(buildGetCompletedTasksScript(since, limit));
-      const result = parseTaskListOutput(output);
+      const result = parsePaginatedTasks(output);
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     },
   );

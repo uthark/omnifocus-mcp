@@ -1,5 +1,5 @@
 import { escapeForAppleScript } from './executor.js';
-import { splitRecords, splitFields, unescapeField } from './parser.js';
+import { splitRecords, splitFields, unescapeField, APPLESCRIPT_HELPERS } from './parser.js';
 import type { OFTag } from '../types.js';
 
 export function buildGetTagsScript(limit: number): string {
@@ -21,24 +21,7 @@ tell application "OmniFocus"
     return output
   end tell
 end tell
-
-on escapeField(theText)
-  set theText to my replaceText(theText, "\\\\", "\\\\\\\\")
-  set theText to my replaceText(theText, tab, "\\\\t")
-  set theText to my replaceText(theText, linefeed, "\\\\n")
-  set theText to my replaceText(theText, return, "\\\\n")
-  return theText
-end escapeField
-
-on replaceText(theText, searchFor, replaceWith)
-  set oldDelims to AppleScript's text item delimiters
-  set AppleScript's text item delimiters to searchFor
-  set textItems to text items of theText
-  set AppleScript's text item delimiters to replaceWith
-  set theText to textItems as text
-  set AppleScript's text item delimiters to oldDelims
-  return theText
-end replaceText`;
+${APPLESCRIPT_HELPERS}`;
 }
 
 export function buildCreateTagScript(

@@ -6,10 +6,11 @@ import {
 } from '../tags.js';
 
 describe('buildGetTagsScript', () => {
-  it('returns valid AppleScript that queries all tags', () => {
-    const script = buildGetTagsScript();
+  it('returns valid AppleScript that queries tags with limit', () => {
+    const script = buildGetTagsScript(50);
     expect(script).toContain('tell application "OmniFocus"');
     expect(script).toContain('flattened tags');
+    expect(script).toContain('50');
   });
 });
 

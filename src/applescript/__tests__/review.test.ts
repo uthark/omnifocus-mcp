@@ -6,9 +6,8 @@ import {
   buildGetOverdueTasksScript,
   buildGetForecastScript,
   buildGetCompletedTasksScript,
-  parseProjectsForReviewOutput,
-  parseTaskListOutput,
 } from '../review.js';
+import { parseProjects, parsePaginatedTasks } from '../parser.js';
 
 describe('buildGetProjectsDueForReviewScript', () => {
   it('queries projects past review date', () => {
@@ -27,9 +26,10 @@ describe('buildMarkProjectReviewedScript', () => {
 });
 
 describe('buildGetStaleTasksScript', () => {
-  it('queries tasks not modified in N days', () => {
-    const script = buildGetStaleTasksScript(30);
+  it('queries tasks not modified in N days within a project', () => {
+    const script = buildGetStaleTasksScript('proj123', 30, 10);
     expect(script).toContain('modification date');
+    expect(script).toContain('proj123');
   });
 });
 
@@ -43,39 +43,39 @@ describe('buildGetOverdueTasksScript', () => {
 
 describe('buildGetForecastScript', () => {
   it('queries tasks due in next N days', () => {
-    const script = buildGetForecastScript(7);
+    const script = buildGetForecastScript(7, 10);
     expect(script).toContain('due date');
   });
 });
 
 describe('buildGetCompletedTasksScript', () => {
   it('queries tasks completed since a date', () => {
-    const script = buildGetCompletedTasksScript('2026-04-15');
+    const script = buildGetCompletedTasksScript('2026-04-15', 10);
     expect(script).toContain('2026-04-15');
     expect(script).toContain('completion date');
   });
 });
 
-describe('parseProjectsForReviewOutput', () => {
+describe('parseProjects (review context)', () => {
   it('parses project records', () => {
     const output = 'proj1\tStale Project\tNotes\tactive\t3\t2026-04-01T00:00:00\t604800';
-    const projects = parseProjectsForReviewOutput(output);
+    const projects = parseProjects(output);
     expect(projects).toHaveLength(1);
     expect(projects[0].name).toBe('Stale Project');
   });
 
   it('returns empty array for empty output', () => {
-    expect(parseProjectsForReviewOutput('')).toEqual([]);
+    expect(parseProjects('')).toEqual([]);
   });
 });
 
-describe('parseTaskListOutput', () => {
+describe('parsePaginatedTasks (review context)', () => {
   it('parses paginated task records', () => {
     const output = [
       'TOTAL:1',
       'id1\tOverdue task\t\t2026-01-01T00:00:00\t2026-01-01T00:00:00\t2026-04-01T00:00:00\t\ttrue\tfalse\t\tSome Project\tWork',
     ].join('\n');
-    const result = parseTaskListOutput(output);
+    const result = parsePaginatedTasks(output);
     expect(result.total).toBe(1);
     expect(result.items[0].name).toBe('Overdue task');
     expect(result.items[0].dueDate).toBe('2026-04-01T00:00:00');

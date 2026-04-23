@@ -1,4 +1,4 @@
-import type { OFTask } from '../types.js';
+import type { OFProject, OFTask, StaleTask, PaginatedResult } from '../types.js';
 
 export function unescapeField(value: string): string {
   if (value === '') return '';
@@ -133,3 +133,90 @@ on taskRecord(t)
     return taskId & tab & taskName & tab & taskNote & tab & cDate & tab & mDate & tab & duDate & tab & defDate & tab & isFlagged & tab & isCompleted & tab & compDate & tab & projName & tab & tagStr
   end using terms from
 end taskRecord`;
+
+// ── Consolidated output parsers ──────────────────────────────────────
+
+export function parsePaginatedTasks(output: string): PaginatedResult<OFTask> {
+  const { total, lines } = parsePaginatedOutput(output);
+  const items = lines.map((line) => parseTaskFields(splitFields(line)));
+  return { total, items };
+}
+
+export function parseProjects(output: string): OFProject[] {
+  return splitRecords(output).map((line) => {
+    const fields = splitFields(line);
+    return {
+      id: fields[0] ?? '',
+      name: unescapeField(fields[1] ?? ''),
+      note: unescapeField(fields[2] ?? ''),
+      status: (fields[3] ?? 'active') as OFProject['status'],
+      taskCount: parseInt(fields[4] ?? '0', 10),
+      nextReviewDate: fields[5] || null,
+      reviewInterval: parseInt(fields[6] ?? '0', 10),
+    };
+  });
+}
+
+export function parseStaleTasks(output: string): PaginatedResult<StaleTask> {
+  const { total, lines } = parsePaginatedOutput(output);
+  const items = lines.map((line) => {
+    const fields = splitFields(line);
+    return {
+      id: fields[0] ?? '',
+      name: unescapeField(fields[1] ?? ''),
+      modificationDate: fields[2] || null,
+    };
+  });
+  return { total, items };
+}
+
+// ── Shared AppleScript query templates ───────────────────────────────
+
+/**
+ * Builds a paginated task query using a `whose` clause.
+ * Returns tasks formatted via `taskRecord` with a TOTAL: header.
+ */
+export function buildPaginatedTaskQuery(whoseClause: string, limit: number, preamble = ''): string {
+  const preambleBlock = preamble ? `${preamble}\n    ` : '';
+  return `
+tell application "OmniFocus"
+  tell default document
+    ${preambleBlock}set matchingTasks to (${whoseClause})
+    set matchCount to count of matchingTasks
+    set output to "TOTAL:" & matchCount & linefeed
+    set maxCount to matchCount
+    if maxCount > ${limit} then set maxCount to ${limit}
+    repeat with i from 1 to maxCount
+      set t to item i of matchingTasks
+      set output to output & my taskRecord(t) & linefeed
+    end repeat
+    return output
+  end tell
+end tell
+${APPLESCRIPT_HELPERS}`;
+}
+
+/**
+ * Builds a paginated task query using offset/limit on a pre-fetched task list.
+ * The `taskSetup` must assign the result to a variable named `allTasks`.
+ */
+export function buildOffsetTaskQuery(taskSetup: string, offset: number, limit: number): string {
+  return `
+tell application "OmniFocus"
+  tell default document
+    ${taskSetup}
+    set taskCount to count of allTasks
+    set output to "TOTAL:" & taskCount & linefeed
+    set startIdx to ${offset + 1}
+    set endIdx to ${offset + limit}
+    if endIdx > taskCount then set endIdx to taskCount
+    if startIdx > taskCount then return output
+    repeat with i from startIdx to endIdx
+      set t to item i of allTasks
+      set output to output & my taskRecord(t) & linefeed
+    end repeat
+    return output
+  end tell
+end tell
+${APPLESCRIPT_HELPERS}`;
+}

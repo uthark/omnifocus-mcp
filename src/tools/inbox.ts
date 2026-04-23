@@ -6,8 +6,8 @@ import {
   buildGetProjectInboxTasksScript,
   buildProcessInboxTaskScript,
   buildQuickEntryScript,
-  parseInboxTasksOutput,
 } from '../applescript/inbox.js';
+import { parsePaginatedTasks } from '../applescript/parser.js';
 import { INBOX_SOURCES } from '../config.js';
 
 export function registerInboxTools(server: McpServer): void {
@@ -28,7 +28,7 @@ export function registerInboxTools(server: McpServer): void {
         script = buildGetInboxTasksScript(offset, limit);
       }
       const output = await runAppleScript(script);
-      const result = parseInboxTasksOutput(output);
+      const result = parsePaginatedTasks(output);
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     },
   );

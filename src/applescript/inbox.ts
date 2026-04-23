@@ -1,54 +1,17 @@
 import { escapeForAppleScript } from './executor.js';
-import {
-  splitFields,
-  parsePaginatedOutput,
-  parseTaskFields,
-  APPLESCRIPT_HELPERS,
-} from './parser.js';
-import type { OFTask, PaginatedResult } from '../types.js';
+import { buildOffsetTaskQuery } from './parser.js';
 
 export function buildGetInboxTasksScript(offset: number, limit: number): string {
-  return `
-tell application "OmniFocus"
-  tell default document
-    set allTasks to inbox tasks
-    set taskCount to count of allTasks
-    set output to "TOTAL:" & taskCount & linefeed
-    set startIdx to ${offset + 1}
-    set endIdx to ${offset + limit}
-    if endIdx > taskCount then set endIdx to taskCount
-    if startIdx > taskCount then return output
-    repeat with i from startIdx to endIdx
-      set t to item i of allTasks
-      set output to output & my taskRecord(t) & linefeed
-    end repeat
-    return output
-  end tell
-end tell
-${APPLESCRIPT_HELPERS}`;
+  return buildOffsetTaskQuery('set allTasks to inbox tasks', offset, limit);
 }
 
 export function buildGetProjectInboxTasksScript(projectName: string, offset: number, limit: number): string {
   const escaped = escapeForAppleScript(projectName);
-  return `
-tell application "OmniFocus"
-  tell default document
-    set proj to first flattened project whose name is "${escaped}"
-    set allTasks to flattened tasks of proj whose completed is false
-    set taskCount to count of allTasks
-    set output to "TOTAL:" & taskCount & linefeed
-    set startIdx to ${offset + 1}
-    set endIdx to ${offset + limit}
-    if endIdx > taskCount then set endIdx to taskCount
-    if startIdx > taskCount then return output
-    repeat with i from startIdx to endIdx
-      set t to item i of allTasks
-      set output to output & my taskRecord(t) & linefeed
-    end repeat
-    return output
-  end tell
-end tell
-${APPLESCRIPT_HELPERS}`;
+  return buildOffsetTaskQuery(
+    `set proj to first flattened project whose name is "${escaped}"\n    set allTasks to flattened tasks of proj whose completed is false`,
+    offset,
+    limit,
+  );
 }
 
 export function buildProcessInboxTaskScript(
@@ -128,10 +91,4 @@ export function buildQuickEntryScript(
   lines.push(`  end tell`);
   lines.push(`end tell`);
   return lines.join('\n');
-}
-
-export function parseInboxTasksOutput(output: string): PaginatedResult<OFTask> {
-  const { total, lines } = parsePaginatedOutput(output);
-  const items = lines.map((line) => parseTaskFields(splitFields(line)));
-  return { total, items };
 }

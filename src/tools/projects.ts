@@ -6,9 +6,8 @@ import {
   buildGetProjectTasksScript,
   buildCreateProjectScript,
   buildUpdateProjectScript,
-  parseProjectsOutput,
-  parseProjectTasksOutput,
 } from '../applescript/projects.js';
+import { parseProjects, parsePaginatedTasks } from '../applescript/parser.js';
 
 export function registerProjectTools(server: McpServer): void {
   server.tool(
@@ -20,7 +19,7 @@ export function registerProjectTools(server: McpServer): void {
     },
     async ({ status, limit }) => {
       const output = await runAppleScript(buildGetProjectsScript({ status, limit }));
-      const projects = parseProjectsOutput(output);
+      const projects = parseProjects(output);
       return { content: [{ type: 'text', text: JSON.stringify(projects, null, 2) }] };
     },
   );
@@ -35,7 +34,7 @@ export function registerProjectTools(server: McpServer): void {
     },
     async ({ projectId, offset, limit }) => {
       const output = await runAppleScript(buildGetProjectTasksScript(projectId, offset, limit));
-      const result = parseProjectTasksOutput(output);
+      const result = parsePaginatedTasks(output);
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     },
   );

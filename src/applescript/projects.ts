@@ -1,13 +1,5 @@
 import { escapeForAppleScript } from './executor.js';
-import {
-  splitRecords,
-  splitFields,
-  unescapeField,
-  parsePaginatedOutput,
-  parseTaskFields,
-  APPLESCRIPT_HELPERS,
-} from './parser.js';
-import type { OFProject, OFTask, PaginatedResult } from '../types.js';
+import { APPLESCRIPT_HELPERS, buildOffsetTaskQuery } from './parser.js';
 
 export function buildGetProjectsScript(options: { status?: string; limit?: number }): string {
   const statusFilter = options.status ?? 'active';
@@ -44,25 +36,11 @@ ${APPLESCRIPT_HELPERS}`;
 
 export function buildGetProjectTasksScript(projectId: string, offset: number, limit: number): string {
   const escaped = escapeForAppleScript(projectId);
-  return `
-tell application "OmniFocus"
-  tell default document
-    set proj to first flattened project whose id is "${escaped}"
-    set allTasks to flattened tasks of proj whose completed is false
-    set taskCount to count of allTasks
-    set output to "TOTAL:" & taskCount & linefeed
-    set startIdx to ${offset + 1}
-    set endIdx to ${offset + limit}
-    if endIdx > taskCount then set endIdx to taskCount
-    if startIdx > taskCount then return output
-    repeat with i from startIdx to endIdx
-      set t to item i of allTasks
-      set output to output & my taskRecord(t) & linefeed
-    end repeat
-    return output
-  end tell
-end tell
-${APPLESCRIPT_HELPERS}`;
+  return buildOffsetTaskQuery(
+    `set proj to first flattened project whose id is "${escaped}"\n    set allTasks to flattened tasks of proj whose completed is false`,
+    offset,
+    limit,
+  );
 }
 
 export function buildCreateProjectScript(
@@ -133,26 +111,4 @@ export function buildUpdateProjectScript(
   lines.push(`  end tell`);
   lines.push(`end tell`);
   return lines.join('\n');
-}
-
-export function parseProjectsOutput(output: string): OFProject[] {
-  const records = splitRecords(output);
-  return records.map((line) => {
-    const fields = splitFields(line);
-    return {
-      id: fields[0] ?? '',
-      name: unescapeField(fields[1] ?? ''),
-      note: unescapeField(fields[2] ?? ''),
-      status: (fields[3] ?? 'active') as OFProject['status'],
-      taskCount: parseInt(fields[4] ?? '0', 10),
-      nextReviewDate: fields[5] || null,
-      reviewInterval: parseInt(fields[6] ?? '0', 10),
-    };
-  });
-}
-
-export function parseProjectTasksOutput(output: string): PaginatedResult<OFTask> {
-  const { total, lines } = parsePaginatedOutput(output);
-  const items = lines.map((line) => parseTaskFields(splitFields(line)));
-  return { total, items };
 }

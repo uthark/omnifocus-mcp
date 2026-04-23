@@ -1,13 +1,5 @@
 import { escapeForAppleScript } from './executor.js';
-import {
-  splitRecords,
-  splitFields,
-  unescapeField,
-  parsePaginatedOutput,
-  parseTaskFields,
-  APPLESCRIPT_HELPERS,
-} from './parser.js';
-import type { OFProject, OFTask, PaginatedResult } from '../types.js';
+import { APPLESCRIPT_HELPERS, buildPaginatedTaskQuery } from './parser.js';
 
 export function buildGetProjectsDueForReviewScript(limit: number): string {
   return `
@@ -80,107 +72,26 @@ ${APPLESCRIPT_HELPERS}`;
 }
 
 export function buildGetOverdueTasksScript(limit: number): string {
-  return `
-tell application "OmniFocus"
-  tell default document
-    set output to ""
-    set now to current date
-    set matchingTasks to (flattened tasks whose completed is false and due date < now)
-    set matchCount to count of matchingTasks
-    set output to "TOTAL:" & matchCount & linefeed
-    set maxCount to matchCount
-    if maxCount > ${limit} then set maxCount to ${limit}
-    repeat with i from 1 to maxCount
-      set t to item i of matchingTasks
-      set output to output & my taskRecord(t) & linefeed
-    end repeat
-    return output
-  end tell
-end tell
-${APPLESCRIPT_HELPERS}`;
+  return buildPaginatedTaskQuery(
+    'flattened tasks whose completed is false and due date < now',
+    limit,
+    'set now to current date',
+  );
 }
 
 export function buildGetForecastScript(days: number, limit: number): string {
-  return `
-tell application "OmniFocus"
-  tell default document
-    set output to ""
-    set now to current date
-    set futureDate to now + (${days} * days)
-    set matchingTasks to (flattened tasks whose completed is false and due date >= now and due date <= futureDate)
-    set matchCount to count of matchingTasks
-    set output to "TOTAL:" & matchCount & linefeed
-    set maxCount to matchCount
-    if maxCount > ${limit} then set maxCount to ${limit}
-    repeat with i from 1 to maxCount
-      set t to item i of matchingTasks
-      set output to output & my taskRecord(t) & linefeed
-    end repeat
-    return output
-  end tell
-end tell
-${APPLESCRIPT_HELPERS}`;
+  return buildPaginatedTaskQuery(
+    'flattened tasks whose completed is false and due date >= now and due date <= futureDate',
+    limit,
+    `set now to current date\n    set futureDate to now + (${days} * days)`,
+  );
 }
 
 export function buildGetCompletedTasksScript(since: string, limit: number): string {
   const escaped = escapeForAppleScript(since);
-  return `
-tell application "OmniFocus"
-  tell default document
-    set output to ""
-    set sinceDate to date "${escaped}"
-    set matchingTasks to (flattened tasks whose completed is true and completion date >= sinceDate)
-    set matchCount to count of matchingTasks
-    set output to "TOTAL:" & matchCount & linefeed
-    set maxCount to matchCount
-    if maxCount > ${limit} then set maxCount to ${limit}
-    repeat with i from 1 to maxCount
-      set t to item i of matchingTasks
-      set output to output & my taskRecord(t) & linefeed
-    end repeat
-    return output
-  end tell
-end tell
-${APPLESCRIPT_HELPERS}`;
-}
-
-export function parseProjectsForReviewOutput(output: string): OFProject[] {
-  const records = splitRecords(output);
-  return records.map((line) => {
-    const fields = splitFields(line);
-    return {
-      id: fields[0] ?? '',
-      name: unescapeField(fields[1] ?? ''),
-      note: unescapeField(fields[2] ?? ''),
-      status: (fields[3] ?? 'active') as OFProject['status'],
-      taskCount: parseInt(fields[4] ?? '0', 10),
-      nextReviewDate: fields[5] || null,
-      reviewInterval: parseInt(fields[6] ?? '0', 10),
-    };
-  });
-}
-
-export function parseTaskListOutput(output: string): PaginatedResult<OFTask> {
-  const { total, lines } = parsePaginatedOutput(output);
-  const items = lines.map((line) => parseTaskFields(splitFields(line)));
-  return { total, items };
-}
-
-export interface StaleTask {
-  id: string;
-  name: string;
-  modificationDate: string | null;
-}
-
-export function parseStaleTasksOutput(output: string): PaginatedResult<StaleTask> {
-  const { total, lines } = parsePaginatedOutput(output);
-  const items = lines.map((line) => {
-    const fields = splitFields(line);
-    return {
-      id: fields[0] ?? '',
-      name: unescapeField(fields[1] ?? ''),
-      modificationDate: fields[2] || null,
-    };
-  });
-  return { total, items };
+  return buildPaginatedTaskQuery(
+    'flattened tasks whose completed is true and completion date >= sinceDate',
+    limit,
+    `set sinceDate to date "${escaped}"`,
+  );
 }

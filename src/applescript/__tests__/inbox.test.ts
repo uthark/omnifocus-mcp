@@ -4,8 +4,8 @@ import {
   buildGetProjectInboxTasksScript,
   buildProcessInboxTaskScript,
   buildQuickEntryScript,
-  parseInboxTasksOutput,
 } from '../inbox.js';
+import { parsePaginatedTasks } from '../parser.js';
 
 describe('buildGetInboxTasksScript', () => {
   it('generates script for system inbox with defaults', () => {
@@ -73,14 +73,14 @@ describe('buildQuickEntryScript', () => {
   });
 });
 
-describe('parseInboxTasksOutput', () => {
+describe('parsePaginatedTasks (inbox context)', () => {
   it('parses paginated task output', () => {
     const output = [
       'TOTAL:50',
       'id1\tBuy milk\t\t2026-01-15T10:00:00\t2026-01-15T10:00:00\t\t\tfalse\tfalse\t\t\t',
       'id2\tCall dentist\tSchedule cleaning\t2026-01-16T09:00:00\t2026-01-16T09:00:00\t2026-02-01T00:00:00\t\ttrue\tfalse\t\t\tHealth',
     ].join('\n');
-    const result = parseInboxTasksOutput(output);
+    const result = parsePaginatedTasks(output);
     expect(result.total).toBe(50);
     expect(result.items).toHaveLength(2);
     expect(result.items[0]).toEqual({
@@ -96,7 +96,7 @@ describe('parseInboxTasksOutput', () => {
   });
 
   it('returns empty result for zero total', () => {
-    const result = parseInboxTasksOutput('TOTAL:0');
+    const result = parsePaginatedTasks('TOTAL:0');
     expect(result.total).toBe(0);
     expect(result.items).toEqual([]);
   });

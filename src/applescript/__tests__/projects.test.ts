@@ -4,9 +4,8 @@ import {
   buildGetProjectTasksScript,
   buildCreateProjectScript,
   buildUpdateProjectScript,
-  parseProjectsOutput,
-  parseProjectTasksOutput,
 } from '../projects.js';
+import { parseProjects, parsePaginatedTasks } from '../parser.js';
 
 describe('buildGetProjectsScript', () => {
   it('queries all active projects by default', () => {
@@ -58,10 +57,10 @@ describe('buildUpdateProjectScript', () => {
   });
 });
 
-describe('parseProjectsOutput', () => {
+describe('parseProjects', () => {
   it('parses project records', () => {
     const output = 'proj1\tMy Project\tSome notes\tactive\t5\t2026-05-01T00:00:00\t604800';
-    const projects = parseProjectsOutput(output);
+    const projects = parseProjects(output);
     expect(projects).toEqual([{
       id: 'proj1', name: 'My Project', note: 'Some notes', status: 'active',
       taskCount: 5, nextReviewDate: '2026-05-01T00:00:00', reviewInterval: 604800,
@@ -69,17 +68,17 @@ describe('parseProjectsOutput', () => {
   });
 
   it('returns empty array for empty output', () => {
-    expect(parseProjectsOutput('')).toEqual([]);
+    expect(parseProjects('')).toEqual([]);
   });
 });
 
-describe('parseProjectTasksOutput', () => {
+describe('parsePaginatedTasks (project context)', () => {
   it('parses paginated task output', () => {
     const output = [
       'TOTAL:2',
       'id1\tTask 1\t\t2026-01-15T10:00:00\t2026-01-15T10:00:00\t\t\tfalse\tfalse\t\tMy Project\t',
     ].join('\n');
-    const result = parseProjectTasksOutput(output);
+    const result = parsePaginatedTasks(output);
     expect(result.total).toBe(2);
     expect(result.items).toHaveLength(1);
     expect(result.items[0].name).toBe('Task 1');
