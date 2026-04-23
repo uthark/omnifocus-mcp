@@ -1,0 +1,21 @@
+[tools]
+# https://nodejs.org/en/download/releases
+node = "22"
+# https://github.com/pre-commit/pre-commit/releases
+pre-commit = "4.5.1"
+
+[tasks.build]
+description = "Compile TypeScript"
+run = "npm run build"
+
+[tasks.test]
+description = "Run tests"
+run = "npm test"
+
+[tasks.lint]
+description = "Type-check and test"
+depends = ["build", "test"]
+
+[tasks.pre-commit]
+description = "Run pre-commit checks"
+depends = ["lint"]

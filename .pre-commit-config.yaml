@@ -1,0 +1,14 @@
+repos:
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.13.8
+    hooks:
+      - id: commitizen
+  - repo: local
+    hooks:
+      - id: pre-commit
+        language: system
+        name: Build and test
+        entry: mise run pre-commit
+        pass_filenames: false
+        verbose: true
+        require_serial: true
