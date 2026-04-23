@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildGetProjectsScript,
+  buildGetProjectByNameScript,
   buildGetProjectTasksScript,
   buildCreateProjectScript,
   buildUpdateProjectScript,
@@ -23,6 +24,14 @@ describe('buildGetProjectsScript', () => {
   it('respects limit', () => {
     const script = buildGetProjectsScript({ limit: 10 });
     expect(script).toContain('10');
+  });
+});
+
+describe('buildGetProjectByNameScript', () => {
+  it('looks up project by name', () => {
+    const script = buildGetProjectByNameScript('32.01 Work Inbox');
+    expect(script).toContain('32.01 Work Inbox');
+    expect(script).toContain('first flattened project whose name is');
   });
 });
 

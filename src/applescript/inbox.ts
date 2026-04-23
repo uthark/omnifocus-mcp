@@ -1,7 +1,10 @@
 import { escapeForAppleScript } from './executor.js';
 import { buildOffsetTaskQuery } from './parser.js';
 
-export function buildGetInboxTasksScript(offset: number, limit: number): string {
+export function buildGetInboxTasksScript(offset: number, limit: number, excludeCompleted = true): string {
+  if (excludeCompleted) {
+    return buildOffsetTaskQuery('set allTasks to (inbox tasks whose completed is false)', offset, limit);
+  }
   return buildOffsetTaskQuery('set allTasks to inbox tasks', offset, limit);
 }
 

@@ -18,14 +18,15 @@ export function registerInboxTools(server: McpServer): void {
       source: z.enum(['inbox', 'private', 'work']).default('inbox').describe('Which inbox to read: "inbox" (system), "private" (11.01 Inbox), "work" (32.01 Work Inbox)'),
       offset: z.number().int().min(0).default(0).describe('Skip first N tasks'),
       limit: z.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
+      excludeCompleted: z.boolean().default(true).describe('Exclude completed tasks (default: true)'),
     },
-    async ({ source, offset, limit }) => {
+    async ({ source, offset, limit, excludeCompleted }) => {
       const inboxConfig = INBOX_SOURCES[source];
       let script: string;
       if (inboxConfig.type === 'project' && inboxConfig.projectName) {
         script = buildGetProjectInboxTasksScript(inboxConfig.projectName, offset, limit);
       } else {
-        script = buildGetInboxTasksScript(offset, limit);
+        script = buildGetInboxTasksScript(offset, limit, excludeCompleted);
       }
       const output = await runAppleScript(script);
       const result = parsePaginatedTasks(output);

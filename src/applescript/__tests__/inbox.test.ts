@@ -19,6 +19,16 @@ describe('buildGetInboxTasksScript', () => {
     expect(script).toContain('11');
     expect(script).toContain('15');
   });
+
+  it('excludes completed tasks by default', () => {
+    const script = buildGetInboxTasksScript(0, 20);
+    expect(script).toContain('whose completed is false');
+  });
+
+  it('includes completed tasks when excludeCompleted is false', () => {
+    const script = buildGetInboxTasksScript(0, 20, false);
+    expect(script).not.toContain('whose completed is false');
+  });
 });
 
 describe('buildGetProjectInboxTasksScript', () => {

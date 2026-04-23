@@ -27,10 +27,10 @@ Add to `.mcp.json` (project or `~/.claude/settings.json`):
 }
 ```
 
-## Tools (22 total)
+## Tools (23 total)
 
 ### Inbox
-- **get_inbox_tasks** — List tasks from system, private, or work inbox (paginated)
+- **get_inbox_tasks** — List tasks from system, private, or work inbox (paginated, excludes completed by default)
 - **process_inbox_task** — Move task to project, assign tags/dates/flags
 - **quick_entry** — Create a new task in inbox or directly in a project
 
@@ -42,6 +42,7 @@ Add to `.mcp.json` (project or `~/.claude/settings.json`):
 - **search_tasks** — Search incomplete tasks by name
 
 ### Projects
+- **get_project_by_name** — Look up a project ID by name
 - **get_projects** — List projects filtered by status
 - **get_project_tasks** — List tasks within a project (paginated)
 - **create_project** — Create project with optional initial tasks
