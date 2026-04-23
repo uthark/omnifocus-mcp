@@ -68,6 +68,12 @@ describe('parseProjects', () => {
     }]);
   });
 
+  it('strips " status" suffix from status field', () => {
+    const output = 'proj1\tMy Project\t\tactive status\t5\t\t0';
+    const projects = parseProjects(output);
+    expect(projects[0].status).toBe('active');
+  });
+
   it('returns empty array for empty output', () => {
     expect(parseProjects('')).toEqual([]);
   });

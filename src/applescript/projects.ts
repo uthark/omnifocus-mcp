@@ -18,13 +18,16 @@ tell application "OmniFocus"
       set projName to my escapeField(name of p)
       set projNote to my escapeField(note of p)
       set projStatus to status of p as text
-      set tCount to count of (flattened tasks of p whose completed is false)
-      set revDate to my formatDate(next review date of p)
+      set tCount to count of tasks of p
       try
-        set revRec to review interval of p
-        set revInterval to (steps of revRec) as text
+        set revDate to my formatDate(next review date of p)
       on error
-        set revInterval to "0"
+        set revDate to ""
+      end try
+      try
+        set revInterval to (review interval of p) as integer
+      on error
+        set revInterval to 0
       end try
       set output to output & projId & tab & projName & tab & projNote & tab & projStatus & tab & tCount & tab & revDate & tab & revInterval & linefeed
     end repeat
