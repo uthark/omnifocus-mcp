@@ -1,11 +1,11 @@
 # omnifocus-mcp
 
-MCP server for OmniFocus — a GTD weekly review assistant powered by Claude.
+MCP server for OmniFocus — enables AI assistants to manage tasks, projects, tags, and run GTD weekly reviews via the Model Context Protocol.
 
-## Prerequisites
+## Requirements
 
 - macOS with OmniFocus installed
-- Node.js 20+
+- Node.js 18+
 
 ## Setup
 
@@ -14,9 +14,7 @@ npm install
 npm run build
 ```
 
-## Claude Code Configuration
-
-Add to your Claude Code MCP settings (`~/.claude/settings.json` or project `.claude/settings.json`):
+Add to `.mcp.json` (project or `~/.claude/settings.json`):
 
 ```json
 {
@@ -29,45 +27,41 @@ Add to your Claude Code MCP settings (`~/.claude/settings.json` or project `.cla
 }
 ```
 
-Replace `/path/to/omnifocus-mcp` with the actual path.
+## Tools (17 total)
 
-## Available Tools
+### Inbox
+- **get_inbox_tasks** — List tasks from system, private, or work inbox (paginated)
+- **process_inbox_task** — Move task to project, assign tags/dates/flags
+- **quick_entry** — Create a new task in inbox or directly in a project
 
-### Inbox Processing
-- **get_inbox_tasks** — List inbox items (system inbox, private, or work)
-- **process_inbox_task** — Move inbox task to project, assign tags, set dates
-- **quick_entry** — Create a new task
-
-### Task Management
+### Tasks
 - **complete_task** — Mark task as completed
 - **delete_task** — Delete a task
-- **update_task** — Modify task properties
+- **update_task** — Modify name, note, tags, dates, flagged status
 - **create_subtasks** — Break a task into subtasks
 
-### Project Management
-- **get_projects** — List projects with status and review info
-- **get_project_tasks** — List tasks within a project
-- **create_project** — Create a new project
-- **update_project** — Change project properties
-
-### Review Support
-- **get_projects_due_for_review** — Projects past review date
-- **mark_project_reviewed** — Mark project as reviewed
-- **get_stale_tasks** — Tasks not modified recently
-- **get_overdue_tasks** — Tasks past due date
+### Projects
+- **get_projects** — List projects filtered by status
+- **get_project_tasks** — List tasks within a project (paginated)
+- **create_project** — Create project with optional initial tasks
+- **update_project** — Change status, review interval, name, note
 
 ### Tags
-- **get_tags** — List all tags
-- **create_tag** — Create a new tag
+- **get_tags** — List tags (with limit)
+- **create_tag** — Create tag (supports nesting via parent tag ID)
 
-### Reporting
-- **get_forecast** — Tasks due in upcoming days
-- **get_completed_tasks** — Tasks completed since a date
+### Review
+- **get_projects_due_for_review** — Projects past their review date
+- **mark_project_reviewed** — Reset review timer
+- **get_stale_tasks** — Tasks in a project not modified for N days
+- **get_overdue_tasks** — Tasks past due date
+- **get_forecast** — Tasks due in the next N days
+- **get_completed_tasks** — Tasks completed since a given date
 
 ## Development
 
 ```bash
-npm run dev       # Watch mode
-npm test          # Run unit tests
-npm run test:watch # Watch tests
+npm run dev       # watch mode
+npm test          # run tests
+npm run build     # compile TypeScript
 ```
