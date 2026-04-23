@@ -1,0 +1,26 @@
+{
+  "name": "omnifocus-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for OmniFocus — GTD weekly review assistant",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "omnifocus-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.3"
+  }
+}
