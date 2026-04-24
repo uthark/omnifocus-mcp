@@ -57,6 +57,13 @@ describe('buildCreateProjectScript', () => {
     expect(script).toContain('First task');
     expect(script).toContain('Second task');
   });
+
+  it('places project inside target folder when folderId given', () => {
+    const script = buildCreateProjectScript('Scoped Project', { folderId: 'folderABC' });
+    expect(script).toContain('folderABC');
+    expect(script).toContain('flattened folder');
+    expect(script).toContain('at end of projects of targetFolder');
+  });
 });
 
 describe('buildUpdateProjectScript', () => {
@@ -115,13 +122,29 @@ describe('buildGetFoldersScript', () => {
 });
 
 describe('parseFolders', () => {
-  it('parses folder records', () => {
-    const output = 'folder1\tPersonal\t3\nfolder2\tWork\t7';
+  it('parses folder records with parent id', () => {
+    const output = 'folder1\tPersonal\t\t3\nfolder2\tWork\t\t7';
     const folders = parseFolders(output);
     expect(folders).toEqual([
-      { id: 'folder1', name: 'Personal', projectCount: 3 },
-      { id: 'folder2', name: 'Work', projectCount: 7 },
+      { id: 'folder1', name: 'Personal', parentId: null, path: 'Personal', projectCount: 3 },
+      { id: 'folder2', name: 'Work', parentId: null, path: 'Work', projectCount: 7 },
     ]);
+  });
+
+  it('builds breadcrumb path for nested folders', () => {
+    const output = [
+      'f-root\tWork\t\t0',
+      'f-inworld\t32 Inworld\tf-root\t0',
+      'f-mgmt\tManagement\tf-inworld\t2',
+    ].join('\n');
+    const folders = parseFolders(output);
+    expect(folders[2]).toEqual({
+      id: 'f-mgmt',
+      name: 'Management',
+      parentId: 'f-inworld',
+      path: 'Work / 32 Inworld / Management',
+      projectCount: 2,
+    });
   });
 
   it('returns empty array for empty output', () => {
@@ -129,7 +152,7 @@ describe('parseFolders', () => {
   });
 
   it('unescapes folder names', () => {
-    const output = 'f1\tName\\nWith\\nNewlines\t2';
+    const output = 'f1\tName\\nWith\\nNewlines\t\t2';
     const folders = parseFolders(output);
     expect(folders[0].name).toBe('Name\nWith\nNewlines');
   });

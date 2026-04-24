@@ -37,6 +37,8 @@ export interface StaleTask {
 export interface OFFolder {
   id: string;
   name: string;
+  parentId: string | null;
+  path: string;
   projectCount: number;
 }
 

@@ -62,13 +62,14 @@ export function registerProjectTools(server: McpServer): void {
       note: z.string().optional().describe('Project note'),
       tags: z.array(z.string()).optional().describe('Tag names to assign'),
       reviewInterval: z.number().optional().describe('Review interval in seconds (604800 = 1 week)'),
+      folderId: z.string().optional().describe('Folder ID to place the project in (see get_folders)'),
       tasks: z.array(z.object({
         name: z.string().describe('Task name'),
         note: z.string().optional().describe('Task note'),
       })).optional().describe('Initial tasks to create in the project'),
     },
-    async ({ name, note, tags, reviewInterval, tasks }) => {
-      const output = await runAppleScript(buildCreateProjectScript(name, { note, tags, reviewInterval, tasks }));
+    async ({ name, note, tags, reviewInterval, folderId, tasks }) => {
+      const output = await runAppleScript(buildCreateProjectScript(name, { note, tags, reviewInterval, folderId, tasks }));
       return { content: [{ type: 'text', text: JSON.stringify({ success: true, projectId: output.trim() }) }] };
     },
   );

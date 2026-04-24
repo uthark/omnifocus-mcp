@@ -1,6 +1,29 @@
 import { escapeForAppleScript } from './executor.js';
 import { APPLESCRIPT_HELPERS, buildOffsetTaskQuery } from './parser.js';
 
+function reviewIntervalRecord(seconds: number): string {
+  const day = 86400;
+  const week = 7 * day;
+  const month = 30 * day;
+  const year = 365 * day;
+  let unit: 'day' | 'week' | 'month' | 'year';
+  let steps: number;
+  if (seconds % year === 0) {
+    unit = 'year';
+    steps = seconds / year;
+  } else if (seconds % month === 0) {
+    unit = 'month';
+    steps = seconds / month;
+  } else if (seconds % week === 0) {
+    unit = 'week';
+    steps = seconds / week;
+  } else {
+    unit = 'day';
+    steps = Math.max(1, Math.round(seconds / day));
+  }
+  return `{unit:${unit}, steps:${steps}, fixed:true}`;
+}
+
 export function buildGetProjectsScript(options: { status?: string; limit?: number }): string {
   const statusFilter = options.status ?? 'active';
   const limit = options.limit ?? 100;
@@ -61,7 +84,7 @@ export function buildGetProjectTasksScript(projectId: string, offset: number, li
 
 export function buildCreateProjectScript(
   name: string,
-  options: { note?: string; tags?: string[]; reviewInterval?: number; tasks?: Array<{ name: string; note?: string }> },
+  options: { note?: string; tags?: string[]; reviewInterval?: number; folderId?: string; tasks?: Array<{ name: string; note?: string }> },
 ): string {
   const escapedName = escapeForAppleScript(name);
   const props: string[] = [`name:"${escapedName}"`];
@@ -69,13 +92,19 @@ export function buildCreateProjectScript(
     props.push(`note:"${escapeForAppleScript(options.note)}"`);
   }
   if (options.reviewInterval) {
-    props.push(`review interval:${options.reviewInterval}`);
+    props.push(`review interval:${reviewIntervalRecord(options.reviewInterval)}`);
   }
   const lines: string[] = [
     `tell application "OmniFocus"`,
     `  tell default document`,
-    `    set proj to make new project with properties {${props.join(', ')}}`,
   ];
+  if (options.folderId) {
+    const escapedFolderId = escapeForAppleScript(options.folderId);
+    lines.push(`    set targetFolder to first flattened folder whose id is "${escapedFolderId}"`);
+    lines.push(`    set proj to make new project with properties {${props.join(', ')}} at end of projects of targetFolder`);
+  } else {
+    lines.push(`    set proj to make new project with properties {${props.join(', ')}}`);
+  }
   if (options.tags && options.tags.length > 0) {
     for (const tag of options.tags) {
       const escapedTag = escapeForAppleScript(tag);
@@ -104,13 +133,20 @@ export function buildGetFoldersScript(limit: number): string {
 tell application "OmniFocus"
   tell default document
     set output to ""
-    set allFolders to folders
+    set allFolders to flattened folders
     set count_ to 0
     repeat with f in allFolders
       set folderId to id of f
       set folderName to my escapeField(name of f)
+      set parentId to ""
+      try
+        set parentContainer to container of f
+        if class of parentContainer is folder then
+          set parentId to id of parentContainer
+        end if
+      end try
       set projCount to count of (projects of f whose status is active)
-      set output to output & folderId & tab & folderName & tab & projCount & linefeed
+      set output to output & folderId & tab & folderName & tab & parentId & tab & projCount & linefeed
       set count_ to count_ + 1
       if count_ >= ${limit} then exit repeat
     end repeat
@@ -142,7 +178,7 @@ export function buildUpdateProjectScript(
     lines.push(`    set status of proj to ${asStatus}`);
   }
   if (options.reviewInterval !== undefined) {
-    lines.push(`    set review interval of proj to ${options.reviewInterval}`);
+    lines.push(`    set review interval of proj to ${reviewIntervalRecord(options.reviewInterval)}`);
   }
   lines.push(`    return id of proj`);
   lines.push(`  end tell`);

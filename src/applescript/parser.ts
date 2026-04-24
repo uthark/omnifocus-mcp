@@ -158,14 +158,30 @@ export function parseProjects(output: string): OFProject[] {
 }
 
 export function parseFolders(output: string): OFFolder[] {
-  return splitRecords(output).map((line) => {
+  const folders = splitRecords(output).map((line) => {
     const fields = splitFields(line);
+    const parentId = fields[2] ?? '';
     return {
       id: fields[0] ?? '',
       name: unescapeField(fields[1] ?? ''),
-      projectCount: parseInt(fields[2] ?? '0', 10),
+      parentId: parentId === '' ? null : parentId,
+      path: '',
+      projectCount: parseInt(fields[3] ?? '0', 10),
     };
   });
+  const byId = new Map(folders.map((f) => [f.id, f]));
+  for (const f of folders) {
+    const segments: string[] = [f.name];
+    let cursor = f.parentId;
+    while (cursor) {
+      const parent = byId.get(cursor);
+      if (!parent) break;
+      segments.unshift(parent.name);
+      cursor = parent.parentId;
+    }
+    f.path = segments.join(' / ');
+  }
+  return folders;
 }
 
 export function parseStaleTasks(output: string): PaginatedResult<StaleTask> {
