@@ -8,6 +8,10 @@ import {
   buildCreateProjectScript,
   buildUpdateProjectScript,
   buildGetFoldersScript,
+  buildCreateFolderScript,
+  buildUpdateFolderScript,
+  buildMoveProjectScript,
+  buildDeleteFolderScript,
 } from '../applescript/projects.js';
 import { parseProjects, parsePaginatedTasks, parseFolders } from '../applescript/parser.js';
 
@@ -100,6 +104,64 @@ export function registerProjectTools(server: McpServer): void {
       const output = await runAppleScript(buildGetFoldersScript(limit));
       const folders = parseFolders(output);
       return { content: [{ type: 'text', text: JSON.stringify(folders, null, 2) }] };
+    },
+  );
+
+  server.tool(
+    'create_folder',
+    'Create a new folder in OmniFocus, optionally inside a parent folder',
+    {
+      name: z.string().describe('Folder name'),
+      parentFolderId: z.string().optional().describe('Parent folder ID (see get_folders); omit to create at document root'),
+    },
+    async ({ name, parentFolderId }) => {
+      const output = await runAppleScript(buildCreateFolderScript(name, parentFolderId));
+      const [folderId, folderName] = output.trim().split('\t');
+      return { content: [{ type: 'text', text: JSON.stringify({ success: true, folderId, name: folderName }) }] };
+    },
+  );
+
+  server.tool(
+    'update_folder',
+    'Rename a folder',
+    {
+      folderId: z.string().describe('OmniFocus folder ID'),
+      name: z.string().describe('New folder name'),
+    },
+    async ({ folderId, name }) => {
+      const output = await runAppleScript(buildUpdateFolderScript(folderId, name));
+      const [id, folderName] = output.trim().split('\t');
+      return { content: [{ type: 'text', text: JSON.stringify({ success: true, folderId: id, name: folderName }) }] };
+    },
+  );
+
+  server.tool(
+    'move_project',
+    'Move a project into a different folder',
+    {
+      projectId: z.string().describe('OmniFocus project ID'),
+      folderId: z.string().describe('Target folder ID (see get_folders)'),
+    },
+    async ({ projectId, folderId }) => {
+      const output = await runAppleScript(buildMoveProjectScript(projectId, folderId));
+      return { content: [{ type: 'text', text: JSON.stringify({ success: true, projectId: output.trim() }) }] };
+    },
+  );
+
+  server.tool(
+    'delete_folder',
+    'Delete a folder. Refuses if the folder contains any projects — move or complete them first.',
+    {
+      folderId: z.string().describe('OmniFocus folder ID'),
+    },
+    async ({ folderId }) => {
+      const output = await runAppleScript(buildDeleteFolderScript(folderId));
+      const result = output.trim();
+      if (result.startsWith('error:not-empty:')) {
+        const count = result.split(':')[2];
+        return { content: [{ type: 'text', text: JSON.stringify({ success: false, error: `Folder is not empty — move or complete its ${count} project(s) first` }) }] };
+      }
+      return { content: [{ type: 'text', text: JSON.stringify({ success: true }) }] };
     },
   );
 }
