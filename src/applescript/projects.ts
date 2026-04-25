@@ -156,6 +156,68 @@ end tell
 ${APPLESCRIPT_HELPERS}`;
 }
 
+export function buildCreateFolderScript(name: string, parentFolderId?: string): string {
+  const escapedName = escapeForAppleScript(name);
+  const lines: string[] = [`tell application "OmniFocus"`, `  tell default document`];
+  if (parentFolderId) {
+    const escapedParent = escapeForAppleScript(parentFolderId);
+    lines.push(`    set parentFolder to first flattened folder whose id is "${escapedParent}"`);
+    lines.push(`    set newFolder to make new folder with properties {name:"${escapedName}"} at end of folders of parentFolder`);
+  } else {
+    lines.push(`    set newFolder to make new folder with properties {name:"${escapedName}"} at end of folders`);
+  }
+  lines.push(`    return id of newFolder & tab & name of newFolder`);
+  lines.push(`  end tell`);
+  lines.push(`end tell`);
+  return lines.join('\n');
+}
+
+export function buildUpdateFolderScript(folderId: string, name: string): string {
+  const escapedId = escapeForAppleScript(folderId);
+  const escapedName = escapeForAppleScript(name);
+  return [
+    `tell application "OmniFocus"`,
+    `  tell default document`,
+    `    set f to first flattened folder whose id is "${escapedId}"`,
+    `    set name of f to "${escapedName}"`,
+    `    return id of f & tab & name of f`,
+    `  end tell`,
+    `end tell`,
+  ].join('\n');
+}
+
+export function buildMoveProjectScript(projectId: string, folderId: string): string {
+  const escapedProject = escapeForAppleScript(projectId);
+  const escapedFolder = escapeForAppleScript(folderId);
+  return [
+    `tell application "OmniFocus"`,
+    `  tell default document`,
+    `    set proj to first flattened project whose id is "${escapedProject}"`,
+    `    set targetFolder to first flattened folder whose id is "${escapedFolder}"`,
+    `    move proj to end of projects of targetFolder`,
+    `    return id of proj`,
+    `  end tell`,
+    `end tell`,
+  ].join('\n');
+}
+
+export function buildDeleteFolderScript(folderId: string): string {
+  const escapedId = escapeForAppleScript(folderId);
+  return [
+    `tell application "OmniFocus"`,
+    `  tell default document`,
+    `    set f to first flattened folder whose id is "${escapedId}"`,
+    `    set projCount to count of projects of f`,
+    `    if projCount > 0 then`,
+    `      return "error:not-empty:" & projCount`,
+    `    end if`,
+    `    delete f`,
+    `    return "deleted"`,
+    `  end tell`,
+    `end tell`,
+  ].join('\n');
+}
+
 export function buildUpdateProjectScript(
   projectId: string,
   options: { status?: string; reviewInterval?: number; name?: string; note?: string },

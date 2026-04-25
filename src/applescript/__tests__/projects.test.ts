@@ -6,6 +6,10 @@ import {
   buildCreateProjectScript,
   buildUpdateProjectScript,
   buildGetFoldersScript,
+  buildCreateFolderScript,
+  buildUpdateFolderScript,
+  buildMoveProjectScript,
+  buildDeleteFolderScript,
 } from '../projects.js';
 import { parseProjects, parsePaginatedTasks, parseFolders } from '../parser.js';
 
@@ -118,6 +122,79 @@ describe('buildGetFoldersScript', () => {
   it('respects limit', () => {
     const script = buildGetFoldersScript(5);
     expect(script).toContain('5');
+  });
+});
+
+describe('buildCreateFolderScript', () => {
+  it('creates a folder at document root when no parent given', () => {
+    const script = buildCreateFolderScript('32.91 Someday/Maybe');
+    expect(script).toContain('make new folder');
+    expect(script).toContain('32.91 Someday/Maybe');
+    expect(script).toContain('at end of folders');
+  });
+
+  it('creates a folder inside a parent folder when parentFolderId given', () => {
+    const script = buildCreateFolderScript('32.91 Someday/Maybe', 'jwii3wAKVG7');
+    expect(script).toContain('jwii3wAKVG7');
+    expect(script).toContain('flattened folder');
+    expect(script).toContain('at end of folders of parentFolder');
+  });
+
+  it('escapes special characters in folder name', () => {
+    const script = buildCreateFolderScript('Foo "Bar"');
+    expect(script).toContain('Foo \\"Bar\\"');
+  });
+
+  it('returns id and name of new folder', () => {
+    const script = buildCreateFolderScript('Test');
+    expect(script).toContain('return id of newFolder');
+  });
+});
+
+describe('buildUpdateFolderScript', () => {
+  it('looks up folder by id and sets new name', () => {
+    const script = buildUpdateFolderScript('e6oPE8uR4xx', '32.11 Management & People');
+    expect(script).toContain('e6oPE8uR4xx');
+    expect(script).toContain('32.11 Management & People');
+    expect(script).toContain('set name of');
+  });
+
+  it('escapes special characters in name', () => {
+    const script = buildUpdateFolderScript('abc', 'Foo "Bar"');
+    expect(script).toContain('Foo \\"Bar\\"');
+  });
+
+  it('returns id of updated folder', () => {
+    const script = buildUpdateFolderScript('fid', 'New Name');
+    expect(script).toContain('return id of f');
+  });
+});
+
+describe('buildMoveProjectScript', () => {
+  it('moves a project to the target folder', () => {
+    const script = buildMoveProjectScript('oMvCtEDlTRU', 'd_ke2_rVSYj');
+    expect(script).toContain('oMvCtEDlTRU');
+    expect(script).toContain('d_ke2_rVSYj');
+    expect(script).toContain('move proj to end of projects of targetFolder');
+  });
+
+  it('returns id of moved project', () => {
+    const script = buildMoveProjectScript('pid', 'fid');
+    expect(script).toContain('return id of proj');
+  });
+});
+
+describe('buildDeleteFolderScript', () => {
+  it('deletes the folder by id', () => {
+    const script = buildDeleteFolderScript('gdOkD5WF9LR');
+    expect(script).toContain('gdOkD5WF9LR');
+    expect(script).toContain('delete f');
+  });
+
+  it('refuses to delete non-empty folders by checking project count', () => {
+    const script = buildDeleteFolderScript('gdOkD5WF9LR');
+    expect(script).toContain('count of projects of f');
+    expect(script).toContain('error:not-empty');
   });
 });
 
