@@ -127,9 +127,10 @@ export function registerReviewTools(server: McpServer): void {
     'List all flagged incomplete tasks (your "hot list" / next actions)',
     {
       limit: z.number().int().min(1).max(100).default(20).describe('Max tasks to return'),
+      deferBefore: z.string().optional().describe('Only return tasks whose defer date is on or before this date (YYYY-MM-DD). Tasks with no defer date are always included.'),
     },
-    async ({ limit }) => {
-      const output = await runAppleScript(buildGetFlaggedTasksScript(limit));
+    async ({ limit, deferBefore }) => {
+      const output = await runAppleScript(buildGetFlaggedTasksScript(limit, deferBefore));
       const result = parsePaginatedTasks(output);
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     },
