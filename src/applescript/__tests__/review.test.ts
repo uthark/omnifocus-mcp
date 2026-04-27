@@ -74,6 +74,23 @@ describe('buildGetFlaggedTasksScript', () => {
     const script = buildGetFlaggedTasksScript(42);
     expect(script).toContain('42');
   });
+
+  it('filters by defer date when deferBefore is provided', () => {
+    const script = buildGetFlaggedTasksScript(20, '2026-04-27');
+    expect(script).toContain('2026-04-27');
+    expect(script).toContain('defer date');
+  });
+
+  it('includes tasks with missing defer date when deferBefore is provided', () => {
+    const script = buildGetFlaggedTasksScript(20, '2026-04-27');
+    expect(script).toContain('missing value');
+  });
+
+  it('without deferBefore uses simple whose clause without date loop', () => {
+    const script = buildGetFlaggedTasksScript(20);
+    expect(script).toContain('whose');
+    expect(script).not.toContain('set cutoff');
+  });
 });
 
 describe('buildGetAvailableTasksScript', () => {

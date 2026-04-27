@@ -218,6 +218,36 @@ export function buildDeleteFolderScript(folderId: string): string {
   ].join('\n');
 }
 
+export function buildConvertTaskToProjectScript(
+  taskId: string,
+  options: { folderId?: string },
+): string {
+  const escapedId = escapeForAppleScript(taskId);
+  const lines: string[] = [
+    `tell application "OmniFocus"`,
+    `  tell default document`,
+    `    set t to first flattened task whose id is "${escapedId}"`,
+    `    set taskName to name of t`,
+    `    set taskNote to note of t`,
+    `    set taskTags to tags of t`,
+  ];
+  if (options.folderId) {
+    const escapedFolder = escapeForAppleScript(options.folderId);
+    lines.push(`    set targetFolder to first flattened folder whose id is "${escapedFolder}"`);
+    lines.push(`    set proj to make new project with properties {name:taskName, note:taskNote} at end of projects of targetFolder`);
+  } else {
+    lines.push(`    set proj to make new project with properties {name:taskName, note:taskNote}`);
+  }
+  lines.push(`    repeat with tg in taskTags`);
+  lines.push(`      add tg to tags of proj`);
+  lines.push(`    end repeat`);
+  lines.push(`    mark complete t`);
+  lines.push(`    return id of proj`);
+  lines.push(`  end tell`);
+  lines.push(`end tell`);
+  return lines.join('\n');
+}
+
 export function buildUpdateProjectScript(
   projectId: string,
   options: { status?: string; reviewInterval?: number; name?: string; note?: string },

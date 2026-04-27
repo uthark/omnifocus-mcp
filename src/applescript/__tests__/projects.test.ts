@@ -10,6 +10,7 @@ import {
   buildUpdateFolderScript,
   buildMoveProjectScript,
   buildDeleteFolderScript,
+  buildConvertTaskToProjectScript,
 } from '../projects.js';
 import { parseProjects, parsePaginatedTasks, parseFolders } from '../parser.js';
 
@@ -195,6 +196,42 @@ describe('buildDeleteFolderScript', () => {
     const script = buildDeleteFolderScript('gdOkD5WF9LR');
     expect(script).toContain('count of projects of f');
     expect(script).toContain('error:not-empty');
+  });
+});
+
+describe('buildConvertTaskToProjectScript', () => {
+  it('looks up task by id', () => {
+    const script = buildConvertTaskToProjectScript('task123', {});
+    expect(script).toContain('task123');
+    expect(script).toContain('flattened task');
+  });
+
+  it('creates a project with the task name', () => {
+    const script = buildConvertTaskToProjectScript('task123', {});
+    expect(script).toContain('make new project');
+    expect(script).toContain('name of t');
+  });
+
+  it('places project in target folder when folderId given', () => {
+    const script = buildConvertTaskToProjectScript('task123', { folderId: 'folderABC' });
+    expect(script).toContain('folderABC');
+    expect(script).toContain('at end of projects of targetFolder');
+  });
+
+  it('copies tags from task to project', () => {
+    const script = buildConvertTaskToProjectScript('task123', {});
+    expect(script).toContain('tags of t');
+    expect(script).toContain('tags of proj');
+  });
+
+  it('completes the original task after creating the project', () => {
+    const script = buildConvertTaskToProjectScript('task123', {});
+    expect(script).toContain('mark complete');
+  });
+
+  it('returns id of new project', () => {
+    const script = buildConvertTaskToProjectScript('task123', {});
+    expect(script).toContain('return id of proj');
   });
 });
 

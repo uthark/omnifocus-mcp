@@ -96,11 +96,35 @@ export function buildGetCompletedTasksScript(since: string, limit: number): stri
   );
 }
 
-export function buildGetFlaggedTasksScript(limit: number): string {
-  return buildPaginatedTaskQuery(
-    'flattened tasks whose completed is false and flagged is true',
-    limit,
-  );
+export function buildGetFlaggedTasksScript(limit: number, deferBefore?: string): string {
+  if (!deferBefore) {
+    return buildPaginatedTaskQuery(
+      'flattened tasks whose completed is false and flagged is true',
+      limit,
+    );
+  }
+  const escaped = escapeForAppleScript(deferBefore);
+  return `
+tell application "OmniFocus"
+  tell default document
+    set cutoff to date "${escaped}"
+    set allTasks to flattened tasks whose completed is false and flagged is true
+    set matchCount to 0
+    set results to ""
+    repeat with t in allTasks
+      set d to defer date of t
+      if d is missing value or d <= cutoff then
+        set matchCount to matchCount + 1
+        if matchCount <= ${limit} then
+          set results to results & my taskRecord(t) & linefeed
+        end if
+      end if
+    end repeat
+    set output to "TOTAL:" & matchCount & linefeed & results
+    return output
+  end tell
+end tell
+${APPLESCRIPT_HELPERS}`;
 }
 
 export function buildGetAvailableTasksScript(projectId: string, limit: number): string {

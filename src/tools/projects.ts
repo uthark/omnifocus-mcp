@@ -12,6 +12,7 @@ import {
   buildUpdateFolderScript,
   buildMoveProjectScript,
   buildDeleteFolderScript,
+  buildConvertTaskToProjectScript,
 } from '../applescript/projects.js';
 import { parseProjects, parsePaginatedTasks, parseFolders } from '../applescript/parser.js';
 
@@ -144,6 +145,19 @@ export function registerProjectTools(server: McpServer): void {
     },
     async ({ projectId, folderId }) => {
       const output = await runAppleScript(buildMoveProjectScript(projectId, folderId));
+      return { content: [{ type: 'text', text: JSON.stringify({ success: true, projectId: output.trim() }) }] };
+    },
+  );
+
+  server.tool(
+    'convert_task_to_project',
+    'Convert an existing task into a project, preserving its name, note, and tags. Completes the original task.',
+    {
+      taskId: z.string().describe('OmniFocus task ID to convert'),
+      folderId: z.string().optional().describe('Folder ID to place the new project in (see get_folders); omit to create at document root'),
+    },
+    async ({ taskId, folderId }) => {
+      const output = await runAppleScript(buildConvertTaskToProjectScript(taskId, { folderId }));
       return { content: [{ type: 'text', text: JSON.stringify({ success: true, projectId: output.trim() }) }] };
     },
   );
