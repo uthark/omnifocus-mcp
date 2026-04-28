@@ -1,5 +1,5 @@
 import { escapeForAppleScript } from './executor.js';
-import { buildPaginatedTaskQuery } from './parser.js';
+import { buildPaginatedTaskQuery, APPLESCRIPT_HELPERS } from './parser.js';
 
 export function buildCompleteTaskScript(taskId: string): string {
   const escaped = escapeForAppleScript(taskId);
@@ -8,6 +8,30 @@ tell application "OmniFocus"
   tell default document
     set t to first flattened task whose id is "${escaped}"
     mark complete t
+    return id of t
+  end tell
+end tell`;
+}
+
+export function buildGetTaskScript(taskId: string): string {
+  const escaped = escapeForAppleScript(taskId);
+  return `
+tell application "OmniFocus"
+  tell default document
+    set t to first flattened task whose id is "${escaped}"
+    return my taskRecord(t)
+  end tell
+end tell
+${APPLESCRIPT_HELPERS}`;
+}
+
+export function buildUncompleteTaskScript(taskId: string): string {
+  const escaped = escapeForAppleScript(taskId);
+  return `
+tell application "OmniFocus"
+  tell default document
+    set t to first flattened task whose id is "${escaped}"
+    mark incomplete t
     return id of t
   end tell
 end tell`;
@@ -27,7 +51,7 @@ end tell`;
 
 export function buildUpdateTaskScript(
   taskId: string,
-  options: { name?: string; note?: string; tags?: string[]; dueDate?: string; deferDate?: string; flagged?: boolean },
+  options: { name?: string; note?: string; tags?: string[]; dueDate?: string; deferDate?: string; flagged?: boolean; completed?: boolean },
 ): string {
   const escapedId = escapeForAppleScript(taskId);
   const lines: string[] = [
@@ -43,6 +67,9 @@ export function buildUpdateTaskScript(
   }
   if (options.flagged !== undefined) {
     lines.push(`    set flagged of t to ${options.flagged}`);
+  }
+  if (options.completed !== undefined) {
+    lines.push(`    mark ${options.completed ? 'complete' : 'incomplete'} t`);
   }
   if (options.dueDate !== undefined) {
     lines.push(`    set due date of t to date "${escapeForAppleScript(options.dueDate)}"`);
