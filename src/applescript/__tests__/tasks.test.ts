@@ -1,10 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildCompleteTaskScript,
+  buildUncompleteTaskScript,
   buildDeleteTaskScript,
   buildUpdateTaskScript,
   buildCreateSubtasksScript,
   buildSearchTasksScript,
+  buildGetTaskScript,
 } from '../tasks.js';
 
 describe('buildCompleteTaskScript', () => {
@@ -12,6 +14,28 @@ describe('buildCompleteTaskScript', () => {
     const script = buildCompleteTaskScript('task123');
     expect(script).toContain('task123');
     expect(script).toContain('mark complete');
+  });
+});
+
+describe('buildGetTaskScript', () => {
+  it('fetches a single task by ID via taskRecord helper', () => {
+    const script = buildGetTaskScript('task123');
+    expect(script).toContain('task123');
+    expect(script).toContain('my taskRecord(t)');
+    expect(script).toContain('on taskRecord');
+  });
+
+  it('escapes special characters in ID', () => {
+    const script = buildGetTaskScript('id"with"quotes');
+    expect(script).toContain('id\\"with\\"quotes');
+  });
+});
+
+describe('buildUncompleteTaskScript', () => {
+  it('reopens task by ID via mark incomplete', () => {
+    const script = buildUncompleteTaskScript('task123');
+    expect(script).toContain('task123');
+    expect(script).toContain('mark incomplete');
   });
 });
 
@@ -50,6 +74,16 @@ describe('buildUpdateTaskScript', () => {
   it('escapes special characters', () => {
     const script = buildUpdateTaskScript('task123', { name: 'Task "with" quotes' });
     expect(script).toContain('Task \\"with\\" quotes');
+  });
+
+  it('marks task complete when completed=true', () => {
+    const script = buildUpdateTaskScript('task123', { completed: true });
+    expect(script).toContain('mark complete');
+  });
+
+  it('reopens task when completed=false', () => {
+    const script = buildUpdateTaskScript('task123', { completed: false });
+    expect(script).toContain('mark incomplete');
   });
 });
 

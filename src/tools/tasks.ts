@@ -3,20 +3,43 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runAppleScript } from '../applescript/executor.js';
 import {
   buildCompleteTaskScript,
+  buildUncompleteTaskScript,
   buildDeleteTaskScript,
   buildUpdateTaskScript,
   buildCreateSubtasksScript,
   buildSearchTasksScript,
+  buildGetTaskScript,
 } from '../applescript/tasks.js';
-import { parsePaginatedTasks } from '../applescript/parser.js';
+import { parsePaginatedTasks, parseTaskFields, splitFields } from '../applescript/parser.js';
 
 export function registerTaskTools(server: McpServer): void {
+  server.tool(
+    'get_task',
+    'Fetch a single task by ID with full properties (including completed status)',
+    { taskId: z.string().describe('OmniFocus task ID') },
+    async ({ taskId }) => {
+      const output = await runAppleScript(buildGetTaskScript(taskId));
+      const task = parseTaskFields(splitFields(output.trim()));
+      return { content: [{ type: 'text', text: JSON.stringify(task, null, 2) }] };
+    },
+  );
+
   server.tool(
     'complete_task',
     'Mark a task as completed',
     { taskId: z.string().describe('OmniFocus task ID') },
     async ({ taskId }) => {
       const output = await runAppleScript(buildCompleteTaskScript(taskId));
+      return { content: [{ type: 'text', text: JSON.stringify({ success: true, taskId: output.trim() }) }] };
+    },
+  );
+
+  server.tool(
+    'uncomplete_task',
+    'Reopen a completed task (mark incomplete)',
+    { taskId: z.string().describe('OmniFocus task ID') },
+    async ({ taskId }) => {
+      const output = await runAppleScript(buildUncompleteTaskScript(taskId));
       return { content: [{ type: 'text', text: JSON.stringify({ success: true, taskId: output.trim() }) }] };
     },
   );
@@ -33,7 +56,7 @@ export function registerTaskTools(server: McpServer): void {
 
   server.tool(
     'update_task',
-    'Modify task properties: name, note, tags, dates, flagged status',
+    'Modify task properties: name, note, tags, dates, flagged, completed status',
     {
       taskId: z.string().describe('OmniFocus task ID'),
       name: z.string().optional().describe('New task name'),
@@ -42,9 +65,10 @@ export function registerTaskTools(server: McpServer): void {
       dueDate: z.string().optional().describe('Due date (e.g., "April 30, 2026")'),
       deferDate: z.string().optional().describe('Defer date (e.g., "April 25, 2026")'),
       flagged: z.boolean().optional().describe('Set flagged status'),
+      completed: z.boolean().optional().describe('Set completion status (true=complete, false=reopen)'),
     },
-    async ({ taskId, name, note, tags, dueDate, deferDate, flagged }) => {
-      const output = await runAppleScript(buildUpdateTaskScript(taskId, { name, note, tags, dueDate, deferDate, flagged }));
+    async ({ taskId, name, note, tags, dueDate, deferDate, flagged, completed }) => {
+      const output = await runAppleScript(buildUpdateTaskScript(taskId, { name, note, tags, dueDate, deferDate, flagged, completed }));
       return { content: [{ type: 'text', text: JSON.stringify({ success: true, taskId: output.trim() }) }] };
     },
   );
