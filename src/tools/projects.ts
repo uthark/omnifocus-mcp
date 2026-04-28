@@ -19,13 +19,14 @@ import { parseProjects, parsePaginatedTasks, parseFolders } from '../applescript
 export function registerProjectTools(server: McpServer): void {
   server.tool(
     'get_projects',
-    'List projects with status, task counts, and review dates',
+    'List projects with status, task counts, and review dates. Optionally scope to a folder (recursively).',
     {
       status: z.enum(['active', 'on hold', 'done', 'dropped']).default('active').describe('Filter by project status'),
       limit: z.number().int().min(1).max(500).default(10).describe('Max projects to return'),
+      folderId: z.string().optional().describe('If set, only return projects within this folder (recursive — includes projects in subfolders)'),
     },
-    async ({ status, limit }) => {
-      const output = await runAppleScript(buildGetProjectsScript({ status, limit }));
+    async ({ status, limit, folderId }) => {
+      const output = await runAppleScript(buildGetProjectsScript({ status, limit, folderId }));
       const projects = parseProjects(output);
       return { content: [{ type: 'text', text: JSON.stringify(projects, null, 2) }] };
     },

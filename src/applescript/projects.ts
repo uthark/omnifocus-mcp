@@ -24,14 +24,18 @@ function reviewIntervalRecord(seconds: number): string {
   return `{unit:${unit}, steps:${steps}, fixed:true}`;
 }
 
-export function buildGetProjectsScript(options: { status?: string; limit?: number }): string {
+export function buildGetProjectsScript(options: { status?: string; limit?: number; folderId?: string }): string {
   const statusFilter = options.status ?? 'active';
   const limit = options.limit ?? 100;
+  const scope = options.folderId
+    ? `set targetFolder to first flattened folder whose id is "${escapeForAppleScript(options.folderId)}"
+    set allProjects to flattened projects of targetFolder whose status is ${statusFilter}`
+    : `set allProjects to flattened projects whose status is ${statusFilter}`;
   return `
 tell application "OmniFocus"
   tell default document
     set output to ""
-    set allProjects to flattened projects whose status is ${statusFilter}
+    ${scope}
     set projCount to count of allProjects
     set maxCount to ${limit}
     if maxCount > projCount then set maxCount to projCount

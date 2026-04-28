@@ -30,6 +30,24 @@ describe('buildGetProjectsScript', () => {
     const script = buildGetProjectsScript({ limit: 10 });
     expect(script).toContain('10');
   });
+
+  it('scopes to a folder when folderId given', () => {
+    const script = buildGetProjectsScript({ folderId: 'jwii3wAKVG7' });
+    expect(script).toContain('jwii3wAKVG7');
+    expect(script).toContain('flattened folder');
+    expect(script).toContain('flattened projects of targetFolder');
+  });
+
+  it('returns the global query when folderId omitted', () => {
+    const script = buildGetProjectsScript({});
+    expect(script).not.toContain('targetFolder');
+    expect(script).toContain('flattened projects whose status is active');
+  });
+
+  it('escapes special characters in folderId', () => {
+    const script = buildGetProjectsScript({ folderId: 'fid"with"quotes' });
+    expect(script).toContain('fid\\"with\\"quotes');
+  });
 });
 
 describe('buildGetProjectByNameScript', () => {
