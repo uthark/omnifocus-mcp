@@ -27,7 +27,7 @@ Add to `.mcp.json` (project or `~/.claude/settings.json`):
 }
 ```
 
-## Tools (23 total)
+## Tools (33 total)
 
 ### Inbox
 - **get_inbox_tasks** — List tasks from system, private, or work inbox (paginated, excludes completed by default)
@@ -35,23 +35,33 @@ Add to `.mcp.json` (project or `~/.claude/settings.json`):
 - **quick_entry** — Create a new task in inbox or directly in a project
 
 ### Tasks
+- **get_task** — Fetch a single task by ID
 - **complete_task** — Mark task as completed
+- **uncomplete_task** — Reopen a completed task
 - **delete_task** — Delete a task
-- **update_task** — Modify name, note, tags, dates, flagged status
+- **update_task** — Modify name, note, tags, dates, flagged, completed status
 - **create_subtasks** — Break a task into subtasks
 - **search_tasks** — Search incomplete tasks by name
 
 ### Projects
+- **get_projects** — List projects filtered by status, optionally scoped to a folder
 - **get_project_by_name** — Look up a project ID by name
-- **get_projects** — List projects filtered by status
 - **get_project_tasks** — List tasks within a project (paginated)
-- **create_project** — Create project with optional initial tasks
+- **create_project** — Create project with optional folder, tags, review interval, and initial tasks
 - **update_project** — Change status, review interval, name, note
-- **get_folders** — List folders (areas of responsibility) with active project counts
+- **convert_task_to_project** — Promote a task to a project, preserving name/note/tags
+
+### Folders
+- **get_folders** — List folders (areas of responsibility) with active project counts and parent IDs
+- **create_folder** — Create a folder, optionally nested inside a parent
+- **update_folder** — Rename a folder
+- **move_project** — Move a project into a different folder
+- **delete_folder** — Delete a folder (refuses if it contains projects)
 
 ### Tags
 - **get_tags** — List tags (with limit)
 - **create_tag** — Create tag (supports nesting via parent tag ID)
+- **delete_tag** — Delete a tag by ID (refuses if it has child tags; tasks are untagged, not deleted)
 
 ### Review
 - **get_projects_due_for_review** — Projects past their review date
