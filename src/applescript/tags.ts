@@ -49,6 +49,24 @@ tell application "OmniFocus"
 end tell`;
 }
 
+export function buildDeleteTagScript(tagId: string): string {
+  const escapedId = escapeForAppleScript(tagId);
+  return [
+    `tell application "OmniFocus"`,
+    `  tell default document`,
+    `    set t to first flattened tag whose id is "${escapedId}"`,
+    `    set childCount to count of tags of t`,
+    `    if childCount > 0 then`,
+    `      return "error:has-children:" & childCount`,
+    `    end if`,
+    `    set taskCount to count of tasks of t`,
+    `    delete t`,
+    `    return "deleted:" & taskCount`,
+    `  end tell`,
+    `end tell`,
+  ].join('\n');
+}
+
 export function parseTagsOutput(output: string): OFTag[] {
   const records = splitRecords(output);
   return records.map((line) => {

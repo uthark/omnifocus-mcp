@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   buildGetTagsScript,
   buildCreateTagScript,
+  buildDeleteTagScript,
   parseTagsOutput,
 } from '../tags.js';
 
@@ -29,6 +30,32 @@ describe('buildCreateTagScript', () => {
   it('includes parent tag lookup when parentTagId is provided', () => {
     const script = buildCreateTagScript('subtag', 'parent123');
     expect(script).toContain('parent123');
+  });
+});
+
+describe('buildDeleteTagScript', () => {
+  it('looks up tag by id and deletes it', () => {
+    const script = buildDeleteTagScript('axSrbG7uMip');
+    expect(script).toContain('axSrbG7uMip');
+    expect(script).toContain('first flattened tag whose id is');
+    expect(script).toContain('delete t');
+  });
+
+  it('refuses to delete a tag with child tags', () => {
+    const script = buildDeleteTagScript('parent123');
+    expect(script).toContain('count of tags of t');
+    expect(script).toContain('error:has-children');
+  });
+
+  it('reports how many tasks were untagged on success', () => {
+    const script = buildDeleteTagScript('tag123');
+    expect(script).toContain('count of tasks of t');
+    expect(script).toContain('"deleted:" & taskCount');
+  });
+
+  it('escapes special characters in tag id', () => {
+    const script = buildDeleteTagScript('id"with"quotes');
+    expect(script).toContain('id\\"with\\"quotes');
   });
 });
 
