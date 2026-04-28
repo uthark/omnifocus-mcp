@@ -1,4 +1,5 @@
 import { escapeForAppleScript } from './executor.js';
+import { normalizeDateString } from './dates.js';
 import { buildOffsetTaskQuery } from './parser.js';
 
 export function buildGetInboxTasksScript(offset: number, limit: number, excludeCompleted = true): string {
@@ -40,10 +41,10 @@ export function buildProcessInboxTaskScript(
     }
   }
   if (options.dueDate) {
-    lines.push(`    set due date of t to date "${escapeForAppleScript(options.dueDate)}"`);
+    lines.push(`    set due date of t to date "${escapeForAppleScript(normalizeDateString(options.dueDate))}"`);
   }
   if (options.deferDate) {
-    lines.push(`    set defer date of t to date "${escapeForAppleScript(options.deferDate)}"`);
+    lines.push(`    set defer date of t to date "${escapeForAppleScript(normalizeDateString(options.deferDate))}"`);
   }
   if (options.flagged !== undefined) {
     lines.push(`    set flagged of t to ${options.flagged}`);
@@ -78,10 +79,10 @@ export function buildQuickEntryScript(
     lines.push(`    set t to make new inbox task with properties {${props.join(', ')}}`);
   }
   if (options.dueDate) {
-    lines.push(`    set due date of t to date "${escapeForAppleScript(options.dueDate)}"`);
+    lines.push(`    set due date of t to date "${escapeForAppleScript(normalizeDateString(options.dueDate))}"`);
   }
   if (options.deferDate) {
-    lines.push(`    set defer date of t to date "${escapeForAppleScript(options.deferDate)}"`);
+    lines.push(`    set defer date of t to date "${escapeForAppleScript(normalizeDateString(options.deferDate))}"`);
   }
   if (options.tags && options.tags.length > 0) {
     for (const tag of options.tags) {

@@ -1,4 +1,5 @@
 import { escapeForAppleScript } from './executor.js';
+import { normalizeDateString } from './dates.js';
 import { APPLESCRIPT_HELPERS, buildPaginatedTaskQuery } from './parser.js';
 
 export function buildGetProjectsDueForReviewScript(limit: number): string {
@@ -88,7 +89,7 @@ export function buildGetForecastScript(days: number, limit: number): string {
 }
 
 export function buildGetCompletedTasksScript(since: string, limit: number): string {
-  const escaped = escapeForAppleScript(since);
+  const escaped = escapeForAppleScript(normalizeDateString(since));
   return buildPaginatedTaskQuery(
     'flattened tasks whose completed is true and completion date >= sinceDate',
     limit,
@@ -103,7 +104,7 @@ export function buildGetFlaggedTasksScript(limit: number, deferBefore?: string):
       limit,
     );
   }
-  const escaped = escapeForAppleScript(deferBefore);
+  const escaped = escapeForAppleScript(normalizeDateString(deferBefore));
   return `
 tell application "OmniFocus"
   tell default document

@@ -65,6 +65,17 @@ describe('buildUpdateTaskScript', () => {
     expect(script).toContain('2026-05-01');
   });
 
+  it('converts PM date times to 24-hour before emitting AppleScript', () => {
+    const script = buildUpdateTaskScript('task123', { deferDate: 'April 28, 2026 1:00 PM' });
+    expect(script).toContain('date "April 28, 2026 13:00"');
+    expect(script).not.toContain('PM');
+  });
+
+  it('converts AM date times to 24-hour before emitting AppleScript', () => {
+    const script = buildUpdateTaskScript('task123', { dueDate: 'April 28, 2026 9:00 AM' });
+    expect(script).toContain('date "April 28, 2026 09:00"');
+  });
+
   it('handles tag replacement', () => {
     const script = buildUpdateTaskScript('task123', { tags: ['Work', 'Urgent'] });
     expect(script).toContain('Work');
