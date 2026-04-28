@@ -1,4 +1,5 @@
 import { escapeForAppleScript } from './executor.js';
+import { normalizeDateString } from './dates.js';
 import { buildPaginatedTaskQuery, APPLESCRIPT_HELPERS } from './parser.js';
 
 export function buildCompleteTaskScript(taskId: string): string {
@@ -72,10 +73,10 @@ export function buildUpdateTaskScript(
     lines.push(`    mark ${options.completed ? 'complete' : 'incomplete'} t`);
   }
   if (options.dueDate !== undefined) {
-    lines.push(`    set due date of t to date "${escapeForAppleScript(options.dueDate)}"`);
+    lines.push(`    set due date of t to date "${escapeForAppleScript(normalizeDateString(options.dueDate))}"`);
   }
   if (options.deferDate !== undefined) {
-    lines.push(`    set defer date of t to date "${escapeForAppleScript(options.deferDate)}"`);
+    lines.push(`    set defer date of t to date "${escapeForAppleScript(normalizeDateString(options.deferDate))}"`);
   }
   if (options.tags !== undefined) {
     lines.push(`    -- Remove existing tags`);

@@ -63,6 +63,12 @@ describe('buildProcessInboxTaskScript', () => {
     expect(script).toContain('flagged');
     expect(script).toContain('true');
   });
+
+  it('normalizes PM dates to 24-hour', () => {
+    const script = buildProcessInboxTaskScript('task123', { deferDate: 'April 28, 2026 1:00 PM' });
+    expect(script).toContain('date "April 28, 2026 13:00"');
+    expect(script).not.toContain('PM');
+  });
 });
 
 describe('buildQuickEntryScript', () => {
@@ -80,6 +86,12 @@ describe('buildQuickEntryScript', () => {
   it('escapes special characters in name', () => {
     const script = buildQuickEntryScript('Task "with" quotes', {});
     expect(script).toContain('Task \\"with\\" quotes');
+  });
+
+  it('normalizes PM dates to 24-hour', () => {
+    const script = buildQuickEntryScript('Buy milk', { deferDate: 'April 28, 2026 1:00 PM' });
+    expect(script).toContain('date "April 28, 2026 13:00"');
+    expect(script).not.toContain('PM');
   });
 });
 
