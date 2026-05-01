@@ -24,13 +24,16 @@ function reviewIntervalRecord(seconds: number): string {
   return `{unit:${unit}, steps:${steps}, fixed:true}`;
 }
 
-export function buildGetProjectsScript(options: { status?: string; limit?: number; folderId?: string }): string {
+export function buildGetProjectsScript(options: { status?: string; limit?: number; folderId?: string; omitNotes?: boolean }): string {
   const statusFilter = options.status ?? 'active';
   const limit = options.limit ?? 100;
   const scope = options.folderId
     ? `set targetFolder to first flattened folder whose id is "${escapeForAppleScript(options.folderId)}"
     set allProjects to flattened projects of targetFolder whose status is ${statusFilter}`
     : `set allProjects to flattened projects whose status is ${statusFilter}`;
+  const noteLine = options.omitNotes
+    ? `set projNote to ""`
+    : `set projNote to my escapeField(note of p)`;
   return `
 tell application "OmniFocus"
   tell default document
@@ -43,7 +46,7 @@ tell application "OmniFocus"
       set p to item i of allProjects
       set projId to id of p
       set projName to my escapeField(name of p)
-      set projNote to my escapeField(note of p)
+      ${noteLine}
       set projStatus to status of p as text
       set tCount to count of tasks of p
       try
@@ -64,8 +67,26 @@ end tell
 ${APPLESCRIPT_HELPERS}`;
 }
 
-export function buildGetProjectByNameScript(name: string): string {
+export function buildGetProjectByNameScript(name: string, options: { contains?: boolean; limit?: number } = {}): string {
   const escaped = escapeForAppleScript(name);
+  if (options.contains) {
+    const limit = options.limit ?? 25;
+    return `
+tell application "OmniFocus"
+  tell default document
+    set output to ""
+    set matches to flattened projects whose name contains "${escaped}"
+    set matchCount to count of matches
+    set maxCount to ${limit}
+    if maxCount > matchCount then set maxCount to matchCount
+    repeat with i from 1 to maxCount
+      set p to item i of matches
+      set output to output & (id of p) & tab & (name of p) & linefeed
+    end repeat
+    return output
+  end tell
+end tell`;
+  }
   return `
 tell application "OmniFocus"
   tell default document

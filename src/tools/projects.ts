@@ -19,27 +19,43 @@ import { parseProjects, parsePaginatedTasks, parseFolders } from '../applescript
 export function registerProjectTools(server: McpServer): void {
   server.tool(
     'get_projects',
-    'List projects with status, task counts, and review dates. Optionally scope to a folder (recursively).',
+    'List projects with status, task counts, and review dates. Optionally scope to a folder (recursively). Pass omitNotes:true when you only need names/IDs — drops the often-verbose note field.',
     {
       status: z.enum(['active', 'on hold', 'done', 'dropped']).default('active').describe('Filter by project status'),
       limit: z.number().int().min(1).max(500).default(10).describe('Max projects to return'),
       folderId: z.string().optional().describe('If set, only return projects within this folder (recursive — includes projects in subfolders)'),
+      omitNotes: z.boolean().default(false).describe('Omit the note field from each project to reduce output size'),
     },
-    async ({ status, limit, folderId }) => {
-      const output = await runAppleScript(buildGetProjectsScript({ status, limit, folderId }));
+    async ({ status, limit, folderId, omitNotes }) => {
+      const output = await runAppleScript(buildGetProjectsScript({ status, limit, folderId, omitNotes }));
       const projects = parseProjects(output);
+      if (omitNotes) {
+        for (const p of projects) delete (p as { note?: string }).note;
+      }
       return { content: [{ type: 'text', text: JSON.stringify(projects, null, 2) }] };
     },
   );
 
   server.tool(
     'get_project_by_name',
-    'Look up a project ID by name. Use this instead of get_projects when you know the project name.',
+    'Look up project(s) by name. Default is exact match (single result). Pass contains:true for substring search returning all matches.',
     {
       name: z.string().describe('Project name to look up'),
+      contains: z.boolean().default(false).describe('Substring search instead of exact match — returns all matches'),
+      limit: z.number().int().min(1).max(100).default(25).describe('Max matches to return when contains=true'),
     },
-    async ({ name }) => {
-      const output = await runAppleScript(buildGetProjectByNameScript(name));
+    async ({ name, contains, limit }) => {
+      const output = await runAppleScript(buildGetProjectByNameScript(name, { contains, limit }));
+      if (contains) {
+        const matches = output
+          .split('\n')
+          .filter((line) => line !== '')
+          .map((line) => {
+            const [id, projName] = line.split('\t');
+            return { id, name: projName };
+          });
+        return { content: [{ type: 'text', text: JSON.stringify({ matches }) }] };
+      }
       const [id, projName] = output.split('\t');
       return { content: [{ type: 'text', text: JSON.stringify({ id, name: projName }) }] };
     },

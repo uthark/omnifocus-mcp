@@ -48,13 +48,40 @@ describe('buildGetProjectsScript', () => {
     const script = buildGetProjectsScript({ folderId: 'fid"with"quotes' });
     expect(script).toContain('fid\\"with\\"quotes');
   });
+
+  it('fetches notes by default', () => {
+    const script = buildGetProjectsScript({});
+    expect(script).toContain('set projNote to my escapeField(note of p)');
+  });
+
+  it('omits notes when omitNotes=true', () => {
+    const script = buildGetProjectsScript({ omitNotes: true });
+    expect(script).not.toContain('set projNote to my escapeField(note of p)');
+    expect(script).toContain('set projNote to ""');
+  });
 });
 
 describe('buildGetProjectByNameScript', () => {
-  it('looks up project by name', () => {
+  it('looks up project by exact name by default', () => {
     const script = buildGetProjectByNameScript('32.01 Work Inbox');
     expect(script).toContain('32.01 Work Inbox');
     expect(script).toContain('first flattened project whose name is');
+  });
+
+  it('uses contains query when contains=true', () => {
+    const script = buildGetProjectByNameScript('Runtime', { contains: true });
+    expect(script).toContain('flattened projects whose name contains "Runtime"');
+    expect(script).not.toContain('first flattened project whose name is');
+  });
+
+  it('respects limit when contains=true', () => {
+    const script = buildGetProjectByNameScript('foo', { contains: true, limit: 5 });
+    expect(script).toMatch(/set maxCount to 5\b/);
+  });
+
+  it('escapes special characters in contains query', () => {
+    const script = buildGetProjectByNameScript('foo"bar', { contains: true });
+    expect(script).toContain('foo\\"bar');
   });
 });
 
