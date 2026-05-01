@@ -109,6 +109,14 @@ describe('buildCreateSubtasksScript', () => {
     expect(script).toContain('Subtask 2');
     expect(script).toContain('Details here');
   });
+
+  it('does not use ambiguous short identifier "st" as a variable name', () => {
+    // OmniFocus dictionary defines `status`; AppleScript parser rejects
+    // `set st to make new task...` with "Expected expression but found st".
+    const script = buildCreateSubtasksScript('task123', [{ name: 'Subtask 1' }]);
+    expect(script).not.toMatch(/\bset st to\b/);
+    expect(script).not.toMatch(/\bid of st\b/);
+  });
 });
 
 describe('buildSearchTasksScript', () => {
