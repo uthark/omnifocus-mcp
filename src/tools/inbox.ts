@@ -13,14 +13,15 @@ import { INBOX_SOURCES } from '../config.js';
 export function registerInboxTools(server: McpServer): void {
   server.tool(
     'get_inbox_tasks',
-    'List inbox tasks with pagination. Supports system inbox and project-based inboxes (private, work).',
+    'List inbox tasks with pagination. Supports system inbox and project-based inboxes (private, work). Pass omitNotes:true to drop the note field from each task — useful for lookahead listings where you only need IDs/names.',
     {
       source: z.enum(['inbox', 'private', 'work']).default('inbox').describe('Which inbox to read: "inbox" (system), "private" (11.01 Inbox), "work" (32.01 Work Inbox)'),
       offset: z.number().int().min(0).default(0).describe('Skip first N tasks'),
       limit: z.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
       excludeCompleted: z.boolean().default(true).describe('Exclude completed tasks (default: true)'),
+      omitNotes: z.boolean().default(false).describe('Omit the note field from each returned task to reduce output size'),
     },
-    async ({ source, offset, limit, excludeCompleted }) => {
+    async ({ source, offset, limit, excludeCompleted, omitNotes }) => {
       const inboxConfig = INBOX_SOURCES[source];
       let script: string;
       if (inboxConfig.type === 'project' && inboxConfig.projectName) {
@@ -30,6 +31,9 @@ export function registerInboxTools(server: McpServer): void {
       }
       const output = await runAppleScript(script);
       const result = parsePaginatedTasks(output);
+      if (omitNotes) {
+        for (const t of result.items) delete (t as { note?: string }).note;
+      }
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     },
   );
