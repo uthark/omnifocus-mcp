@@ -112,9 +112,9 @@ export function buildCreateSubtasksScript(
     if (subtask.note) {
       props.push(`note:"${escapeForAppleScript(subtask.note)}"`);
     }
-    lines.push(`    set st to make new task with properties {${props.join(', ')}} at end of tasks of parentTask`);
+    lines.push(`    set newSubtask to make new task with properties {${props.join(', ')}} at end of tasks of parentTask`);
     lines.push(`    if ids is not "" then set ids to ids & ","`);
-    lines.push(`    set ids to ids & id of st`);
+    lines.push(`    set ids to ids & id of newSubtask`);
   }
   lines.push(`    return ids`);
   lines.push(`  end tell`);
