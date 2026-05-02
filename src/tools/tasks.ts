@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { zBool } from './_schema.js';
 import { runAppleScript } from '../applescript/executor.js';
 import {
   buildCompleteTaskScript,
@@ -64,8 +65,8 @@ export function registerTaskTools(server: McpServer): void {
       tags: z.array(z.string()).optional().describe('Replace all tags with these tag names'),
       dueDate: z.string().optional().describe('Due date (e.g., "April 30, 2026")'),
       deferDate: z.string().optional().describe('Defer date (e.g., "April 25, 2026")'),
-      flagged: z.boolean().optional().describe('Set flagged status'),
-      completed: z.boolean().optional().describe('Set completion status (true=complete, false=reopen)'),
+      flagged: zBool().optional().describe('Set flagged status'),
+      completed: zBool().optional().describe('Set completion status (true=complete, false=reopen)'),
     },
     async ({ taskId, name, note, tags, dueDate, deferDate, flagged, completed }) => {
       const output = await runAppleScript(buildUpdateTaskScript(taskId, { name, note, tags, dueDate, deferDate, flagged, completed }));
@@ -95,7 +96,7 @@ export function registerTaskTools(server: McpServer): void {
     'Search incomplete tasks by name. Use this to find tasks when you know part of the name.',
     {
       query: z.string().describe('Text to search for in task names (case-insensitive contains match)'),
-      limit: z.number().int().min(1).max(100).default(20).describe('Max tasks to return'),
+      limit: z.coerce.number().int().min(1).max(100).default(20).describe('Max tasks to return'),
     },
     async ({ query, limit }) => {
       const output = await runAppleScript(buildSearchTasksScript(query, limit));

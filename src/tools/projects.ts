@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { zBool } from './_schema.js';
 import { runAppleScript } from '../applescript/executor.js';
 import {
   buildGetProjectsScript,
@@ -22,9 +23,9 @@ export function registerProjectTools(server: McpServer): void {
     'List projects with status, task counts, and review dates. Optionally scope to a folder (recursively). Pass omitNotes:true when you only need names/IDs — drops the often-verbose note field.',
     {
       status: z.enum(['active', 'on hold', 'done', 'dropped']).default('active').describe('Filter by project status'),
-      limit: z.number().int().min(1).max(500).default(10).describe('Max projects to return'),
+      limit: z.coerce.number().int().min(1).max(500).default(10).describe('Max projects to return'),
       folderId: z.string().optional().describe('If set, only return projects within this folder (recursive — includes projects in subfolders)'),
-      omitNotes: z.boolean().default(false).describe('Omit the note field from each project to reduce output size'),
+      omitNotes: zBool().default(false).describe('Omit the note field from each project to reduce output size'),
     },
     async ({ status, limit, folderId, omitNotes }) => {
       const output = await runAppleScript(buildGetProjectsScript({ status, limit, folderId, omitNotes }));
@@ -41,8 +42,8 @@ export function registerProjectTools(server: McpServer): void {
     'Look up project(s) by name. Default is exact match (single result). Pass contains:true for substring search returning all matches.',
     {
       name: z.string().describe('Project name to look up'),
-      contains: z.boolean().default(false).describe('Substring search instead of exact match — returns all matches'),
-      limit: z.number().int().min(1).max(100).default(25).describe('Max matches to return when contains=true'),
+      contains: zBool().default(false).describe('Substring search instead of exact match — returns all matches'),
+      limit: z.coerce.number().int().min(1).max(100).default(25).describe('Max matches to return when contains=true'),
     },
     async ({ name, contains, limit }) => {
       const output = await runAppleScript(buildGetProjectByNameScript(name, { contains, limit }));
@@ -66,8 +67,8 @@ export function registerProjectTools(server: McpServer): void {
     'List tasks within a specific project',
     {
       projectId: z.string().describe('OmniFocus project ID'),
-      offset: z.number().int().min(0).default(0).describe('Skip first N tasks'),
-      limit: z.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
+      offset: z.coerce.number().int().min(0).default(0).describe('Skip first N tasks'),
+      limit: z.coerce.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
     },
     async ({ projectId, offset, limit }) => {
       const output = await runAppleScript(buildGetProjectTasksScript(projectId, offset, limit));
@@ -83,7 +84,7 @@ export function registerProjectTools(server: McpServer): void {
       name: z.string().describe('Project name'),
       note: z.string().optional().describe('Project note'),
       tags: z.array(z.string()).optional().describe('Tag names to assign'),
-      reviewInterval: z.number().optional().describe('Review interval in seconds (604800 = 1 week)'),
+      reviewInterval: z.coerce.number().optional().describe('Review interval in seconds (604800 = 1 week)'),
       folderId: z.string().optional().describe('Folder ID to place the project in (see get_folders)'),
       tasks: z.array(z.object({
         name: z.string().describe('Task name'),
@@ -102,7 +103,7 @@ export function registerProjectTools(server: McpServer): void {
     {
       projectId: z.string().describe('OmniFocus project ID'),
       status: z.enum(['active', 'on hold', 'done', 'dropped']).optional().describe('New project status'),
-      reviewInterval: z.number().optional().describe('New review interval in seconds'),
+      reviewInterval: z.coerce.number().optional().describe('New review interval in seconds'),
       name: z.string().optional().describe('New project name'),
       note: z.string().optional().describe('New project note'),
     },
@@ -116,7 +117,7 @@ export function registerProjectTools(server: McpServer): void {
     'get_folders',
     'List folders (areas of responsibility) with their active project counts',
     {
-      limit: z.number().int().min(1).max(100).default(50).describe('Max folders to return'),
+      limit: z.coerce.number().int().min(1).max(100).default(50).describe('Max folders to return'),
     },
     async ({ limit }) => {
       const output = await runAppleScript(buildGetFoldersScript(limit));

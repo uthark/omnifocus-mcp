@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runAppleScript } from '../applescript/executor.js';
+import { zBool } from './_schema.js';
 import {
   buildGetTagsScript,
   buildCreateTagScript,
@@ -13,8 +14,8 @@ export function registerTagTools(server: McpServer): void {
     'get_tags',
     'List tags in OmniFocus. Pass nameOnly:true to return a flat array of names — much smaller payload when you only need to verify whether a tag exists.',
     {
-      limit: z.number().int().min(1).max(500).default(50).describe('Max tags to return'),
-      nameOnly: z.boolean().default(false).describe('Return a flat array of tag names instead of {id,name} objects'),
+      limit: z.coerce.number().int().min(1).max(500).default(50).describe('Max tags to return'),
+      nameOnly: zBool().default(false).describe('Return a flat array of tag names instead of {id,name} objects'),
     },
     async ({ limit, nameOnly }) => {
       const output = await runAppleScript(buildGetTagsScript(limit));
