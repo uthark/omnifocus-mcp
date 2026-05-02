@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { zBool } from './_schema.js';
 import { runAppleScript } from '../applescript/executor.js';
 import {
   buildGetInboxTasksScript,
@@ -16,10 +17,10 @@ export function registerInboxTools(server: McpServer): void {
     'List inbox tasks with pagination. Supports system inbox and project-based inboxes (private, work). Pass omitNotes:true to drop the note field from each task — useful for lookahead listings where you only need IDs/names.',
     {
       source: z.enum(['inbox', 'private', 'work']).default('inbox').describe('Which inbox to read: "inbox" (system), "private" (11.01 Inbox), "work" (32.01 Work Inbox)'),
-      offset: z.number().int().min(0).default(0).describe('Skip first N tasks'),
-      limit: z.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
-      excludeCompleted: z.boolean().default(true).describe('Exclude completed tasks (default: true)'),
-      omitNotes: z.boolean().default(false).describe('Omit the note field from each returned task to reduce output size'),
+      offset: z.coerce.number().int().min(0).default(0).describe('Skip first N tasks'),
+      limit: z.coerce.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
+      excludeCompleted: zBool().default(true).describe('Exclude completed tasks (default: true)'),
+      omitNotes: zBool().default(false).describe('Omit the note field from each returned task to reduce output size'),
     },
     async ({ source, offset, limit, excludeCompleted, omitNotes }) => {
       const inboxConfig = INBOX_SOURCES[source];
@@ -47,7 +48,7 @@ export function registerInboxTools(server: McpServer): void {
       tags: z.array(z.string()).optional().describe('Tag names to assign'),
       dueDate: z.string().optional().describe('Due date (e.g., "April 30, 2026")'),
       deferDate: z.string().optional().describe('Defer date (e.g., "April 25, 2026")'),
-      flagged: z.boolean().optional().describe('Set flagged status'),
+      flagged: zBool().optional().describe('Set flagged status'),
     },
     async ({ taskId, projectId, tags, dueDate, deferDate, flagged }) => {
       const output = await runAppleScript(buildProcessInboxTaskScript(taskId, { projectId, tags, dueDate, deferDate, flagged }));
@@ -65,7 +66,7 @@ export function registerInboxTools(server: McpServer): void {
       tags: z.array(z.string()).optional().describe('Tag names to assign'),
       dueDate: z.string().optional().describe('Due date (e.g., "April 30, 2026")'),
       deferDate: z.string().optional().describe('Defer date (e.g., "April 25, 2026")'),
-      flagged: z.boolean().optional().describe('Set flagged status'),
+      flagged: zBool().optional().describe('Set flagged status'),
     },
     async ({ name, note, projectId, tags, dueDate, deferDate, flagged }) => {
       const output = await runAppleScript(buildQuickEntryScript(name, { note, projectId, tags, dueDate, deferDate, flagged }));

@@ -19,7 +19,7 @@ export function registerReviewTools(server: McpServer): void {
     'get_projects_due_for_review',
     'List projects that are past their review date',
     {
-      limit: z.number().int().min(1).max(100).default(10).describe('Max projects to return'),
+      limit: z.coerce.number().int().min(1).max(100).default(10).describe('Max projects to return'),
     },
     async ({ limit }) => {
       const output = await runAppleScript(buildGetProjectsDueForReviewScript(limit));
@@ -43,8 +43,8 @@ export function registerReviewTools(server: McpServer): void {
     'Find tasks in a project not modified for a long time (potential cleanup candidates)',
     {
       projectId: z.string().describe('OmniFocus project ID to scan'),
-      daysSinceModified: z.number().int().min(1).default(30).describe('Tasks not modified in this many days'),
-      limit: z.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
+      daysSinceModified: z.coerce.number().int().min(1).default(30).describe('Tasks not modified in this many days'),
+      limit: z.coerce.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
     },
     async ({ projectId, daysSinceModified, limit }) => {
       const output = await runAppleScript(buildGetStaleTasksScript(projectId, daysSinceModified, limit), 30_000);
@@ -57,7 +57,7 @@ export function registerReviewTools(server: McpServer): void {
     'get_overdue_tasks',
     'List tasks that are past their due date',
     {
-      limit: z.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
+      limit: z.coerce.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
     },
     async ({ limit }) => {
       const output = await runAppleScript(buildGetOverdueTasksScript(limit));
@@ -70,8 +70,8 @@ export function registerReviewTools(server: McpServer): void {
     'get_forecast',
     'Show tasks due today and in the upcoming days',
     {
-      days: z.number().int().min(1).max(90).default(7).describe('Number of days to look ahead'),
-      limit: z.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
+      days: z.coerce.number().int().min(1).max(90).default(7).describe('Number of days to look ahead'),
+      limit: z.coerce.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
     },
     async ({ days, limit }) => {
       const output = await runAppleScript(buildGetForecastScript(days, limit));
@@ -85,7 +85,7 @@ export function registerReviewTools(server: McpServer): void {
     'List tasks completed since a given date (for weekly review summaries)',
     {
       since: z.string().describe('Date string (e.g., "April 15, 2026")'),
-      limit: z.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
+      limit: z.coerce.number().int().min(1).max(100).default(10).describe('Max tasks to return'),
     },
     async ({ since, limit }) => {
       const output = await runAppleScript(buildGetCompletedTasksScript(since, limit));
@@ -99,7 +99,7 @@ export function registerReviewTools(server: McpServer): void {
     'List incomplete tasks that have any of the specified tags. Use this to review GTD context lists like @waiting_for, @errands, @agenda.',
     {
       tagNames: z.array(z.string()).min(1).describe('Tag names to filter by (returns tasks matching ANY of these tags)'),
-      limit: z.number().int().min(1).max(100).default(20).describe('Max tasks to return'),
+      limit: z.coerce.number().int().min(1).max(100).default(20).describe('Max tasks to return'),
     },
     async ({ tagNames, limit }) => {
       const output = await runAppleScript(buildGetTasksByTagScript(tagNames, limit), 30_000);
@@ -113,7 +113,7 @@ export function registerReviewTools(server: McpServer): void {
     'List tasks in a project that are currently actionable (not completed, not blocked, not deferred to the future)',
     {
       projectId: z.string().describe('OmniFocus project ID to scan'),
-      limit: z.number().int().min(1).max(100).default(20).describe('Max tasks to return'),
+      limit: z.coerce.number().int().min(1).max(100).default(20).describe('Max tasks to return'),
     },
     async ({ projectId, limit }) => {
       const output = await runAppleScript(buildGetAvailableTasksScript(projectId, limit), 30_000);
@@ -126,7 +126,7 @@ export function registerReviewTools(server: McpServer): void {
     'get_flagged_tasks',
     'List all flagged incomplete tasks (your "hot list" / next actions)',
     {
-      limit: z.number().int().min(1).max(100).default(20).describe('Max tasks to return'),
+      limit: z.coerce.number().int().min(1).max(100).default(20).describe('Max tasks to return'),
       deferBefore: z.string().optional().describe('Only return tasks whose defer date is on or before this date (YYYY-MM-DD). Tasks with no defer date are always included.'),
     },
     async ({ limit, deferBefore }) => {
