@@ -1,27 +1,22 @@
 import { escapeForAppleScript } from './executor.js';
+import { normalizeDateString } from './dates.js';
 import { APPLESCRIPT_HELPERS, buildOffsetTaskQuery } from './parser.js';
 
-function reviewIntervalRecord(seconds: number): string {
-  const day = 86400;
-  const week = 7 * day;
-  const month = 30 * day;
-  const year = 365 * day;
-  let unit: 'day' | 'week' | 'month' | 'year';
-  let steps: number;
-  if (seconds % year === 0) {
-    unit = 'year';
-    steps = seconds / year;
-  } else if (seconds % month === 0) {
-    unit = 'month';
-    steps = seconds / month;
-  } else if (seconds % week === 0) {
-    unit = 'week';
-    steps = seconds / week;
-  } else {
-    unit = 'day';
-    steps = Math.max(1, Math.round(seconds / day));
-  }
-  return `{unit:${unit}, steps:${steps}, fixed:true}`;
+export type ReviewIntervalUnit = 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year';
+
+export interface ReviewInterval {
+  steps: number;
+  unit: ReviewIntervalUnit;
+  fixed: boolean;
+}
+
+function reviewIntervalRecord(interval: ReviewInterval): string {
+  return `{unit:${interval.unit}, steps:${interval.steps}, fixed:${interval.fixed}}`;
+}
+
+function setDateLine(target: string, value: string): string {
+  if (value === '') return `    set ${target} to missing value`;
+  return `    set ${target} to date "${escapeForAppleScript(normalizeDateString(value))}"`;
 }
 
 export function buildGetProjectsScript(options: { status?: string; limit?: number; folderId?: string; omitNotes?: boolean }): string {
@@ -54,12 +49,23 @@ tell application "OmniFocus"
       on error
         set revDate to ""
       end try
+      set revSteps to ""
+      set revUnit to ""
+      set revFixed to ""
       try
-        set revInterval to (review interval of p) as integer
-      on error
-        set revInterval to 0
+        set ri to review interval of p
+        if ri is not missing value then
+          set revSteps to (steps of ri) as text
+          set revUnit to (unit of ri) as text
+          set revFixed to (fixed of ri) as text
+        end if
       end try
-      set output to output & projId & tab & projName & tab & projNote & tab & projStatus & tab & tCount & tab & revDate & tab & revInterval & linefeed
+      set estMin to ""
+      try
+        set em to estimated minutes of p
+        if em is not missing value then set estMin to em as text
+      end try
+      set output to output & projId & tab & projName & tab & projNote & tab & projStatus & tab & tCount & tab & revDate & tab & revSteps & tab & revUnit & tab & revFixed & tab & estMin & linefeed
     end repeat
     return output
   end tell
@@ -109,7 +115,7 @@ export function buildGetProjectTasksScript(projectId: string, offset: number, li
 
 export function buildCreateProjectScript(
   name: string,
-  options: { note?: string; tags?: string[]; reviewInterval?: number; folderId?: string; tasks?: Array<{ name: string; note?: string }> },
+  options: { note?: string; tags?: string[]; reviewInterval?: ReviewInterval; folderId?: string; tasks?: Array<{ name: string; note?: string }> },
 ): string {
   const escapedName = escapeForAppleScript(name);
   const props: string[] = [`name:"${escapedName}"`];
@@ -275,7 +281,7 @@ export function buildConvertTaskToProjectScript(
 
 export function buildUpdateProjectScript(
   projectId: string,
-  options: { status?: string; reviewInterval?: number; name?: string; note?: string },
+  options: { status?: string; reviewInterval?: ReviewInterval; nextReviewDate?: string; name?: string; note?: string; estimatedMinutes?: number | null },
 ): string {
   const escapedId = escapeForAppleScript(projectId);
   const lines: string[] = [
@@ -302,6 +308,16 @@ export function buildUpdateProjectScript(
   }
   if (options.reviewInterval !== undefined) {
     lines.push(`    set review interval of proj to ${reviewIntervalRecord(options.reviewInterval)}`);
+  }
+  if (options.nextReviewDate !== undefined) {
+    lines.push(setDateLine('next review date of proj', options.nextReviewDate));
+  }
+  if (options.estimatedMinutes !== undefined) {
+    lines.push(
+      options.estimatedMinutes === null
+        ? `    set estimated minutes of proj to missing value`
+        : `    set estimated minutes of proj to ${options.estimatedMinutes}`,
+    );
   }
   lines.push(`    return id of proj`);
   lines.push(`  end tell`);

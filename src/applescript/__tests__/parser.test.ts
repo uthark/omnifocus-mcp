@@ -70,7 +70,7 @@ describe('parseTaskFields', () => {
     const fields = [
       'id1', 'Buy milk', '', '2026-01-15T10:00:00', '2026-01-15T10:00:00',
       '2026-02-01T00:00:00', '', 'true', 'false', '', 'Groceries', 'Errands,Home',
-      '2026-01-30T00:00:00',
+      '2026-01-30T00:00:00', 'FREQ=WEEKLY;INTERVAL=1', 'regularly', 'based on due', 'true', '15',
     ];
     const task = parseTaskFields(fields);
     expect(task).toEqual({
@@ -87,6 +87,11 @@ describe('parseTaskFields', () => {
       projectName: 'Groceries',
       tags: ['Errands', 'Home'],
       plannedDate: '2026-01-30T00:00:00',
+      recurrence: 'FREQ=WEEKLY;INTERVAL=1',
+      repetitionSchedule: 'regularly',
+      repetitionBasedOn: 'due',
+      catchUpAutomatically: true,
+      estimatedMinutes: 15,
     });
   });
   it('handles missing optional fields', () => {

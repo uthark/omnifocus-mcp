@@ -119,7 +119,8 @@ describe('parsePaginatedTasks (inbox context)', () => {
       id: 'id1', name: 'Buy milk', note: '', creationDate: '2026-01-15T10:00:00',
       modificationDate: '2026-01-15T10:00:00', dueDate: null, deferDate: null,
       flagged: false, completed: false, completionDate: null, projectName: null, tags: [],
-      plannedDate: null,
+      plannedDate: null, recurrence: null, repetitionSchedule: null, repetitionBasedOn: null,
+      catchUpAutomatically: null, estimatedMinutes: null,
     });
     expect(result.items[1].name).toBe('Call dentist');
     expect(result.items[1].note).toBe('Schedule cleaning');

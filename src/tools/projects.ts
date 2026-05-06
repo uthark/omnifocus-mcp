@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { zBool } from './_schema.js';
+import { zBool, zNullableInt } from './_schema.js';
 import { runAppleScript } from '../applescript/executor.js';
 import {
   buildGetProjectsScript,
@@ -77,6 +77,26 @@ export function registerProjectTools(server: McpServer): void {
     },
   );
 
+  const reviewIntervalSchema = {
+    reviewIntervalSteps: z.coerce.number().int().positive().optional().describe('Review interval count, e.g. 2 with unit=week → every 2 weeks. Required together with reviewIntervalUnit.'),
+    reviewIntervalUnit: z.enum(['minute', 'hour', 'day', 'week', 'month', 'year']).optional().describe('Review interval unit. Required together with reviewIntervalSteps.'),
+    reviewIntervalFixed: zBool().optional().describe('If true (default), next review is computed on a fixed calendar; if false, it slides relative to last review'),
+  };
+
+  function buildReviewInterval(args: { reviewIntervalSteps?: number; reviewIntervalUnit?: 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year'; reviewIntervalFixed?: boolean }) {
+    const { reviewIntervalSteps, reviewIntervalUnit, reviewIntervalFixed } = args;
+    if (reviewIntervalSteps === undefined && reviewIntervalUnit === undefined) {
+      if (reviewIntervalFixed !== undefined) {
+        throw new Error('reviewIntervalFixed requires reviewIntervalSteps and reviewIntervalUnit');
+      }
+      return undefined;
+    }
+    if (reviewIntervalSteps === undefined || reviewIntervalUnit === undefined) {
+      throw new Error('reviewIntervalSteps and reviewIntervalUnit must be set together');
+    }
+    return { steps: reviewIntervalSteps, unit: reviewIntervalUnit, fixed: reviewIntervalFixed ?? true };
+  }
+
   server.tool(
     'create_project',
     'Create a new project in OmniFocus',
@@ -84,31 +104,39 @@ export function registerProjectTools(server: McpServer): void {
       name: z.string().describe('Project name'),
       note: z.string().optional().describe('Project note'),
       tags: z.array(z.string()).optional().describe('Tag names to assign'),
-      reviewInterval: z.coerce.number().optional().describe('Review interval in seconds (604800 = 1 week)'),
+      ...reviewIntervalSchema,
       folderId: z.string().optional().describe('Folder ID to place the project in (see get_folders)'),
       tasks: z.array(z.object({
         name: z.string().describe('Task name'),
         note: z.string().optional().describe('Task note'),
       })).optional().describe('Initial tasks to create in the project'),
     },
-    async ({ name, note, tags, reviewInterval, folderId, tasks }) => {
-      const output = await runAppleScript(buildCreateProjectScript(name, { note, tags, reviewInterval, folderId, tasks }));
+    async (args) => {
+      const reviewInterval = buildReviewInterval(args);
+      const output = await runAppleScript(buildCreateProjectScript(args.name, {
+        note: args.note, tags: args.tags, reviewInterval, folderId: args.folderId, tasks: args.tasks,
+      }));
       return { content: [{ type: 'text', text: JSON.stringify({ success: true, projectId: output.trim() }) }] };
     },
   );
 
   server.tool(
     'update_project',
-    'Change project properties: status, review interval, name, note',
+    'Change project properties: status, review interval/schedule, name, note',
     {
       projectId: z.string().describe('OmniFocus project ID'),
       status: z.enum(['active', 'on hold', 'done', 'dropped']).optional().describe('New project status'),
-      reviewInterval: z.coerce.number().optional().describe('New review interval in seconds'),
+      ...reviewIntervalSchema,
+      nextReviewDate: z.string().optional().describe('Next review date (e.g., "May 15, 2026"); empty string resets it from last-review + interval'),
       name: z.string().optional().describe('New project name'),
       note: z.string().optional().describe('New project note'),
+      estimatedMinutes: zNullableInt().optional().describe('Estimated time in whole minutes; pass null to clear'),
     },
-    async ({ projectId, status, reviewInterval, name, note }) => {
-      const output = await runAppleScript(buildUpdateProjectScript(projectId, { status, reviewInterval, name, note }));
+    async (args) => {
+      const reviewInterval = buildReviewInterval(args);
+      const output = await runAppleScript(buildUpdateProjectScript(args.projectId, {
+        status: args.status, reviewInterval, nextReviewDate: args.nextReviewDate, name: args.name, note: args.note, estimatedMinutes: args.estimatedMinutes,
+      }));
       return { content: [{ type: 'text', text: JSON.stringify({ success: true, projectId: output.trim() }) }] };
     },
   );

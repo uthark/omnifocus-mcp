@@ -10,3 +10,15 @@ const coerceBoolean = (v: unknown): unknown => {
 };
 
 export const zBool = () => z.preprocess(coerceBoolean, z.boolean());
+
+const coerceNullableInt = (v: unknown): unknown => {
+  if (v === null || v === 'null' || v === '') return null;
+  if (typeof v === 'string') {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : v;
+  }
+  return v;
+};
+
+export const zNullableInt = () =>
+  z.preprocess(coerceNullableInt, z.union([z.number().int().nonnegative(), z.null()]));

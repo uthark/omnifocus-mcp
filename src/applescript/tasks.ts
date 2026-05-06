@@ -57,10 +57,37 @@ tell application "OmniFocus"
 end tell`;
 }
 
-export function buildUpdateTaskScript(
-  taskId: string,
-  options: { name?: string; note?: string; tags?: string[]; dueDate?: string; deferDate?: string; plannedDate?: string; flagged?: boolean; completed?: boolean },
-): string {
+export type RepetitionSchedule = 'regularly' | 'from-completion';
+export type RepetitionBasedOn = 'due' | 'planned' | 'defer';
+
+const SCHEDULE_AS: Record<RepetitionSchedule, string> = {
+  'regularly': 'regularly',
+  'from-completion': 'from completion',
+};
+
+const BASED_ON_AS: Record<RepetitionBasedOn, string> = {
+  'due': 'based on due',
+  'planned': 'based on planned',
+  'defer': 'based on defer',
+};
+
+export interface UpdateTaskOptions {
+  name?: string;
+  note?: string;
+  tags?: string[];
+  dueDate?: string;
+  deferDate?: string;
+  plannedDate?: string;
+  flagged?: boolean;
+  completed?: boolean;
+  recurrence?: string;
+  repetitionSchedule?: RepetitionSchedule;
+  repetitionBasedOn?: RepetitionBasedOn;
+  catchUpAutomatically?: boolean;
+  estimatedMinutes?: number | null;
+}
+
+export function buildUpdateTaskScript(taskId: string, options: UpdateTaskOptions): string {
   const escapedId = escapeForAppleScript(taskId);
   const lines: string[] = [
     `tell application "OmniFocus"`,
@@ -87,6 +114,36 @@ export function buildUpdateTaskScript(
   }
   if (options.plannedDate !== undefined) {
     lines.push(setDateLine('planned date of t', options.plannedDate));
+  }
+  if (options.estimatedMinutes !== undefined) {
+    lines.push(
+      options.estimatedMinutes === null
+        ? `    set estimated minutes of t to missing value`
+        : `    set estimated minutes of t to ${options.estimatedMinutes}`,
+    );
+  }
+  if (options.recurrence !== undefined) {
+    if (options.recurrence === '') {
+      lines.push(`    set repetition rule of t to missing value`);
+    } else {
+      const props: string[] = [`recurrence:"${escapeForAppleScript(options.recurrence)}"`];
+      if (options.repetitionSchedule !== undefined) {
+        props.push(`repetition schedule:${SCHEDULE_AS[options.repetitionSchedule]}`);
+      }
+      if (options.repetitionBasedOn !== undefined) {
+        props.push(`repetition based on:${BASED_ON_AS[options.repetitionBasedOn]}`);
+      }
+      if (options.catchUpAutomatically !== undefined) {
+        props.push(`catch up automatically:${options.catchUpAutomatically}`);
+      }
+      lines.push(`    set repetition rule of t to {${props.join(', ')}}`);
+    }
+  } else if (
+    options.repetitionSchedule !== undefined ||
+    options.repetitionBasedOn !== undefined ||
+    options.catchUpAutomatically !== undefined
+  ) {
+    throw new Error('repetition fields require recurrence to be set in the same call');
   }
   if (options.tags !== undefined) {
     lines.push(`    -- Remove existing tags`);
