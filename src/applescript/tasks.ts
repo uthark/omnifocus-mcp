@@ -2,6 +2,13 @@ import { escapeForAppleScript } from './executor.js';
 import { normalizeDateString } from './dates.js';
 import { buildPaginatedTaskQuery, APPLESCRIPT_HELPERS } from './parser.js';
 
+function setDateLine(target: string, value: string): string {
+  if (value === '') {
+    return `    set ${target} to missing value`;
+  }
+  return `    set ${target} to date "${escapeForAppleScript(normalizeDateString(value))}"`;
+}
+
 export function buildCompleteTaskScript(taskId: string): string {
   const escaped = escapeForAppleScript(taskId);
   return `
@@ -73,13 +80,13 @@ export function buildUpdateTaskScript(
     lines.push(`    mark ${options.completed ? 'complete' : 'incomplete'} t`);
   }
   if (options.dueDate !== undefined) {
-    lines.push(`    set due date of t to date "${escapeForAppleScript(normalizeDateString(options.dueDate))}"`);
+    lines.push(setDateLine('due date of t', options.dueDate));
   }
   if (options.deferDate !== undefined) {
-    lines.push(`    set defer date of t to date "${escapeForAppleScript(normalizeDateString(options.deferDate))}"`);
+    lines.push(setDateLine('defer date of t', options.deferDate));
   }
   if (options.plannedDate !== undefined) {
-    lines.push(`    set planned date of t to date "${escapeForAppleScript(normalizeDateString(options.plannedDate))}"`);
+    lines.push(setDateLine('planned date of t', options.plannedDate));
   }
   if (options.tags !== undefined) {
     lines.push(`    -- Remove existing tags`);
