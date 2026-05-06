@@ -52,7 +52,7 @@ end tell`;
 
 export function buildUpdateTaskScript(
   taskId: string,
-  options: { name?: string; note?: string; tags?: string[]; dueDate?: string; deferDate?: string; flagged?: boolean; completed?: boolean },
+  options: { name?: string; note?: string; tags?: string[]; dueDate?: string; deferDate?: string; plannedDate?: string; flagged?: boolean; completed?: boolean },
 ): string {
   const escapedId = escapeForAppleScript(taskId);
   const lines: string[] = [
@@ -77,6 +77,9 @@ export function buildUpdateTaskScript(
   }
   if (options.deferDate !== undefined) {
     lines.push(`    set defer date of t to date "${escapeForAppleScript(normalizeDateString(options.deferDate))}"`);
+  }
+  if (options.plannedDate !== undefined) {
+    lines.push(`    set planned date of t to date "${escapeForAppleScript(normalizeDateString(options.plannedDate))}"`);
   }
   if (options.tags !== undefined) {
     lines.push(`    -- Remove existing tags`);

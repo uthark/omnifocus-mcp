@@ -65,11 +65,12 @@ export function registerTaskTools(server: McpServer): void {
       tags: z.array(z.string()).optional().describe('Replace all tags with these tag names'),
       dueDate: z.string().optional().describe('Due date (e.g., "April 30, 2026")'),
       deferDate: z.string().optional().describe('Defer date (e.g., "April 25, 2026")'),
+      plannedDate: z.string().optional().describe('Planned date — when you intend to work on this (OmniFocus 4)'),
       flagged: zBool().optional().describe('Set flagged status'),
       completed: zBool().optional().describe('Set completion status (true=complete, false=reopen)'),
     },
-    async ({ taskId, name, note, tags, dueDate, deferDate, flagged, completed }) => {
-      const output = await runAppleScript(buildUpdateTaskScript(taskId, { name, note, tags, dueDate, deferDate, flagged, completed }));
+    async ({ taskId, name, note, tags, dueDate, deferDate, plannedDate, flagged, completed }) => {
+      const output = await runAppleScript(buildUpdateTaskScript(taskId, { name, note, tags, dueDate, deferDate, plannedDate, flagged, completed }));
       return { content: [{ type: 'text', text: JSON.stringify({ success: true, taskId: output.trim() }) }] };
     },
   );

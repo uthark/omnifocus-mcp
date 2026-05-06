@@ -82,6 +82,11 @@ describe('buildUpdateTaskScript', () => {
     expect(script).toContain('Urgent');
   });
 
+  it('sets planned date', () => {
+    const script = buildUpdateTaskScript('task123', { plannedDate: 'April 30, 2026' });
+    expect(script).toContain('set planned date of t to date "April 30, 2026"');
+  });
+
   it('escapes special characters', () => {
     const script = buildUpdateTaskScript('task123', { name: 'Task "with" quotes' });
     expect(script).toContain('Task \\"with\\" quotes');

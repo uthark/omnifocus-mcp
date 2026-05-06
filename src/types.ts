@@ -6,6 +6,7 @@ export interface OFTask {
   modificationDate: string;
   dueDate: string | null;
   deferDate: string | null;
+  plannedDate: string | null;
   flagged: boolean;
   completed: boolean;
   completionDate: string | null;

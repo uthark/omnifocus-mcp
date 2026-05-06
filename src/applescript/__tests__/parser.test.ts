@@ -70,6 +70,7 @@ describe('parseTaskFields', () => {
     const fields = [
       'id1', 'Buy milk', '', '2026-01-15T10:00:00', '2026-01-15T10:00:00',
       '2026-02-01T00:00:00', '', 'true', 'false', '', 'Groceries', 'Errands,Home',
+      '2026-01-30T00:00:00',
     ];
     const task = parseTaskFields(fields);
     expect(task).toEqual({
@@ -85,6 +86,7 @@ describe('parseTaskFields', () => {
       completionDate: null,
       projectName: 'Groceries',
       tags: ['Errands', 'Home'],
+      plannedDate: '2026-01-30T00:00:00',
     });
   });
   it('handles missing optional fields', () => {

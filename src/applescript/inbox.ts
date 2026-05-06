@@ -20,7 +20,7 @@ export function buildGetProjectInboxTasksScript(projectName: string, offset: num
 
 export function buildProcessInboxTaskScript(
   taskId: string,
-  options: { projectId?: string; tags?: string[]; dueDate?: string; deferDate?: string; flagged?: boolean },
+  options: { projectId?: string; tags?: string[]; dueDate?: string; deferDate?: string; plannedDate?: string; flagged?: boolean },
 ): string {
   const escapedTaskId = escapeForAppleScript(taskId);
   const lines: string[] = [
@@ -46,6 +46,9 @@ export function buildProcessInboxTaskScript(
   if (options.deferDate) {
     lines.push(`    set defer date of t to date "${escapeForAppleScript(normalizeDateString(options.deferDate))}"`);
   }
+  if (options.plannedDate) {
+    lines.push(`    set planned date of t to date "${escapeForAppleScript(normalizeDateString(options.plannedDate))}"`);
+  }
   if (options.flagged !== undefined) {
     lines.push(`    set flagged of t to ${options.flagged}`);
   }
@@ -57,7 +60,7 @@ export function buildProcessInboxTaskScript(
 
 export function buildQuickEntryScript(
   name: string,
-  options: { note?: string; projectId?: string; tags?: string[]; dueDate?: string; deferDate?: string; flagged?: boolean },
+  options: { note?: string; projectId?: string; tags?: string[]; dueDate?: string; deferDate?: string; plannedDate?: string; flagged?: boolean },
 ): string {
   const escapedName = escapeForAppleScript(name);
   const props: string[] = [`name:"${escapedName}"`];
@@ -83,6 +86,9 @@ export function buildQuickEntryScript(
   }
   if (options.deferDate) {
     lines.push(`    set defer date of t to date "${escapeForAppleScript(normalizeDateString(options.deferDate))}"`);
+  }
+  if (options.plannedDate) {
+    lines.push(`    set planned date of t to date "${escapeForAppleScript(normalizeDateString(options.plannedDate))}"`);
   }
   if (options.tags && options.tags.length > 0) {
     for (const tag of options.tags) {

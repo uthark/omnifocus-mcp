@@ -48,10 +48,11 @@ export function registerInboxTools(server: McpServer): void {
       tags: z.array(z.string()).optional().describe('Tag names to assign'),
       dueDate: z.string().optional().describe('Due date (e.g., "April 30, 2026")'),
       deferDate: z.string().optional().describe('Defer date (e.g., "April 25, 2026")'),
+      plannedDate: z.string().optional().describe('Planned date — when you intend to work on this (OmniFocus 4)'),
       flagged: zBool().optional().describe('Set flagged status'),
     },
-    async ({ taskId, projectId, tags, dueDate, deferDate, flagged }) => {
-      const output = await runAppleScript(buildProcessInboxTaskScript(taskId, { projectId, tags, dueDate, deferDate, flagged }));
+    async ({ taskId, projectId, tags, dueDate, deferDate, plannedDate, flagged }) => {
+      const output = await runAppleScript(buildProcessInboxTaskScript(taskId, { projectId, tags, dueDate, deferDate, plannedDate, flagged }));
       return { content: [{ type: 'text', text: JSON.stringify({ success: true, taskId: output.trim() }) }] };
     },
   );
@@ -66,10 +67,11 @@ export function registerInboxTools(server: McpServer): void {
       tags: z.array(z.string()).optional().describe('Tag names to assign'),
       dueDate: z.string().optional().describe('Due date (e.g., "April 30, 2026")'),
       deferDate: z.string().optional().describe('Defer date (e.g., "April 25, 2026")'),
+      plannedDate: z.string().optional().describe('Planned date — when you intend to work on this (OmniFocus 4)'),
       flagged: zBool().optional().describe('Set flagged status'),
     },
-    async ({ name, note, projectId, tags, dueDate, deferDate, flagged }) => {
-      const output = await runAppleScript(buildQuickEntryScript(name, { note, projectId, tags, dueDate, deferDate, flagged }));
+    async ({ name, note, projectId, tags, dueDate, deferDate, plannedDate, flagged }) => {
+      const output = await runAppleScript(buildQuickEntryScript(name, { note, projectId, tags, dueDate, deferDate, plannedDate, flagged }));
       return { content: [{ type: 'text', text: JSON.stringify({ success: true, taskId: output.trim() }) }] };
     },
   );
