@@ -120,7 +120,19 @@ describe('buildUpdateProjectScript', () => {
   it('updates project status', () => {
     const script = buildUpdateProjectScript('proj123', { status: 'on hold' });
     expect(script).toContain('proj123');
-    expect(script).toContain('on hold');
+    expect(script).toContain('set status of proj to on hold');
+  });
+
+  it('uses mark complete verb for done status', () => {
+    const script = buildUpdateProjectScript('proj123', { status: 'done' });
+    expect(script).toContain('mark complete proj');
+    expect(script).not.toContain('set status of proj to done');
+  });
+
+  it('uses mark dropped verb for dropped status', () => {
+    const script = buildUpdateProjectScript('proj123', { status: 'dropped' });
+    expect(script).toContain('mark dropped proj');
+    expect(script).not.toContain('set status of proj to dropped');
   });
 });
 

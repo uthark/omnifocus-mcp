@@ -290,9 +290,15 @@ export function buildUpdateProjectScript(
     lines.push(`    set note of proj to "${escapeForAppleScript(options.note)}"`);
   }
   if (options.status !== undefined) {
-    const statusMap: Record<string, string> = { active: 'active', 'on hold': 'on hold', done: 'done', dropped: 'dropped' };
-    const asStatus = statusMap[options.status] ?? 'active';
-    lines.push(`    set status of proj to ${asStatus}`);
+    if (options.status === 'done') {
+      lines.push(`    mark complete proj`);
+    } else if (options.status === 'dropped') {
+      lines.push(`    mark dropped proj`);
+    } else {
+      const statusMap: Record<string, string> = { active: 'active', 'on hold': 'on hold' };
+      const asStatus = statusMap[options.status] ?? 'active';
+      lines.push(`    set status of proj to ${asStatus}`);
+    }
   }
   if (options.reviewInterval !== undefined) {
     lines.push(`    set review interval of proj to ${reviewIntervalRecord(options.reviewInterval)}`);
