@@ -82,6 +82,27 @@ describe('buildUpdateTaskScript', () => {
     expect(script).toContain('Urgent');
   });
 
+  it('sets planned date', () => {
+    const script = buildUpdateTaskScript('task123', { plannedDate: 'April 30, 2026' });
+    expect(script).toContain('set planned date of t to date "April 30, 2026"');
+  });
+
+  it('clears planned date when empty string is passed', () => {
+    const script = buildUpdateTaskScript('task123', { plannedDate: '' });
+    expect(script).toContain('set planned date of t to missing value');
+    expect(script).not.toContain('set planned date of t to date');
+  });
+
+  it('clears due date when empty string is passed', () => {
+    const script = buildUpdateTaskScript('task123', { dueDate: '' });
+    expect(script).toContain('set due date of t to missing value');
+  });
+
+  it('clears defer date when empty string is passed', () => {
+    const script = buildUpdateTaskScript('task123', { deferDate: '' });
+    expect(script).toContain('set defer date of t to missing value');
+  });
+
   it('escapes special characters', () => {
     const script = buildUpdateTaskScript('task123', { name: 'Task "with" quotes' });
     expect(script).toContain('Task \\"with\\" quotes');

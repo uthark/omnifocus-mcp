@@ -69,6 +69,11 @@ describe('buildProcessInboxTaskScript', () => {
     expect(script).toContain('date "April 28, 2026 13:00"');
     expect(script).not.toContain('PM');
   });
+
+  it('sets planned date', () => {
+    const script = buildProcessInboxTaskScript('task123', { plannedDate: 'April 30, 2026' });
+    expect(script).toContain('set planned date of t to date "April 30, 2026"');
+  });
 });
 
 describe('buildQuickEntryScript', () => {
@@ -93,6 +98,11 @@ describe('buildQuickEntryScript', () => {
     expect(script).toContain('date "April 28, 2026 13:00"');
     expect(script).not.toContain('PM');
   });
+
+  it('sets planned date', () => {
+    const script = buildQuickEntryScript('Buy milk', { plannedDate: 'April 30, 2026' });
+    expect(script).toContain('set planned date of t to date "April 30, 2026"');
+  });
 });
 
 describe('parsePaginatedTasks (inbox context)', () => {
@@ -109,6 +119,7 @@ describe('parsePaginatedTasks (inbox context)', () => {
       id: 'id1', name: 'Buy milk', note: '', creationDate: '2026-01-15T10:00:00',
       modificationDate: '2026-01-15T10:00:00', dueDate: null, deferDate: null,
       flagged: false, completed: false, completionDate: null, projectName: null, tags: [],
+      plannedDate: null,
     });
     expect(result.items[1].name).toBe('Call dentist');
     expect(result.items[1].note).toBe('Schedule cleaning');

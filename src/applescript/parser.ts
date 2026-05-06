@@ -50,6 +50,7 @@ export function parseTaskFields(fields: string[]): OFTask {
     completionDate: fields[9] || null,
     projectName: fields[10] || null,
     tags: fields[11] ? fields[11].split(',').filter((t) => t !== '') : [],
+    plannedDate: fields[12] || null,
   };
 }
 
@@ -120,6 +121,8 @@ on taskRecord(t)
     set duDate to my formatDate(duDateVal)
     set defDateVal to defer date of t
     set defDate to my formatDate(defDateVal)
+    set planDateVal to planned date of t
+    set planDate to my formatDate(planDateVal)
     set isFlagged to flagged of t
     set isCompleted to completed of t
     set compDateVal to completion date of t
@@ -130,7 +133,7 @@ on taskRecord(t)
       set projName to ""
     end try
     set tagStr to my getTagNames(t)
-    return taskId & tab & taskName & tab & taskNote & tab & cDate & tab & mDate & tab & duDate & tab & defDate & tab & isFlagged & tab & isCompleted & tab & compDate & tab & projName & tab & tagStr
+    return taskId & tab & taskName & tab & taskNote & tab & cDate & tab & mDate & tab & duDate & tab & defDate & tab & isFlagged & tab & isCompleted & tab & compDate & tab & projName & tab & tagStr & tab & planDate
   end using terms from
 end taskRecord`;
 
