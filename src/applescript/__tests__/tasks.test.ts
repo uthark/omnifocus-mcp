@@ -108,6 +108,55 @@ describe('buildUpdateTaskScript', () => {
     expect(script).toContain('Task \\"with\\" quotes');
   });
 
+  it('sets repetition rule with recurrence only', () => {
+    const script = buildUpdateTaskScript('task123', { recurrence: 'FREQ=WEEKLY;INTERVAL=1' });
+    expect(script).toContain('set repetition rule of t to {recurrence:"FREQ=WEEKLY;INTERVAL=1"}');
+  });
+
+  it('sets repetition rule with all modern fields', () => {
+    const script = buildUpdateTaskScript('task123', {
+      recurrence: 'FREQ=DAILY',
+      repetitionSchedule: 'from-completion',
+      repetitionBasedOn: 'planned',
+      catchUpAutomatically: true,
+    });
+    expect(script).toContain('recurrence:"FREQ=DAILY"');
+    expect(script).toContain('repetition schedule:from completion');
+    expect(script).toContain('repetition based on:based on planned');
+    expect(script).toContain('catch up automatically:true');
+  });
+
+  it('clears repetition rule when recurrence is empty string', () => {
+    const script = buildUpdateTaskScript('task123', { recurrence: '' });
+    expect(script).toContain('set repetition rule of t to missing value');
+    expect(script).not.toContain('recurrence:"');
+  });
+
+  it('throws when repetitionSchedule is set without recurrence', () => {
+    expect(() => buildUpdateTaskScript('task123', { repetitionSchedule: 'regularly' }))
+      .toThrow(/recurrence/);
+  });
+
+  it('throws when repetitionBasedOn is set without recurrence', () => {
+    expect(() => buildUpdateTaskScript('task123', { repetitionBasedOn: 'due' }))
+      .toThrow(/recurrence/);
+  });
+
+  it('throws when catchUpAutomatically is set without recurrence', () => {
+    expect(() => buildUpdateTaskScript('task123', { catchUpAutomatically: false }))
+      .toThrow(/recurrence/);
+  });
+
+  it('sets estimated minutes', () => {
+    const script = buildUpdateTaskScript('task123', { estimatedMinutes: 25 });
+    expect(script).toContain('set estimated minutes of t to 25');
+  });
+
+  it('clears estimated minutes when null', () => {
+    const script = buildUpdateTaskScript('task123', { estimatedMinutes: null });
+    expect(script).toContain('set estimated minutes of t to missing value');
+  });
+
   it('marks task complete when completed=true', () => {
     const script = buildUpdateTaskScript('task123', { completed: true });
     expect(script).toContain('mark complete');

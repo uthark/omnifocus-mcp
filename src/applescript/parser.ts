@@ -51,7 +51,35 @@ export function parseTaskFields(fields: string[]): OFTask {
     projectName: fields[10] || null,
     tags: fields[11] ? fields[11].split(',').filter((t) => t !== '') : [],
     plannedDate: fields[12] || null,
+    recurrence: fields[13] || null,
+    repetitionSchedule: parseRepetitionSchedule(fields[14]),
+    repetitionBasedOn: parseRepetitionBasedOn(fields[15]),
+    catchUpAutomatically: parseCatchUp(fields[16]),
+    estimatedMinutes: fields[17] ? parseInt(fields[17], 10) : null,
   };
+}
+
+function parseRepetitionSchedule(value: string | undefined): OFTask['repetitionSchedule'] {
+  switch (value) {
+    case 'regularly': return 'regularly';
+    case 'from completion': return 'from-completion';
+    default: return null;
+  }
+}
+
+function parseRepetitionBasedOn(value: string | undefined): OFTask['repetitionBasedOn'] {
+  switch (value) {
+    case 'based on due': return 'due';
+    case 'based on planned': return 'planned';
+    case 'based on defer': return 'defer';
+    default: return null;
+  }
+}
+
+function parseCatchUp(value: string | undefined): boolean | null {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return null;
 }
 
 /**
@@ -133,7 +161,33 @@ on taskRecord(t)
       set projName to ""
     end try
     set tagStr to my getTagNames(t)
-    return taskId & tab & taskName & tab & taskNote & tab & cDate & tab & mDate & tab & duDate & tab & defDate & tab & isFlagged & tab & isCompleted & tab & compDate & tab & projName & tab & tagStr & tab & planDate
+    set estMin to ""
+    try
+      set em to estimated minutes of t
+      if em is not missing value then set estMin to em as text
+    end try
+    set recurStr to ""
+    set schedStr to ""
+    set basedOnStr to ""
+    set catchUpStr to ""
+    try
+      set theRule to repetition rule of t
+      if theRule is not missing value then
+        try
+          set recurStr to my escapeField(recurrence of theRule)
+        end try
+        try
+          set schedStr to (repetition schedule of theRule) as text
+        end try
+        try
+          set basedOnStr to (repetition based on of theRule) as text
+        end try
+        try
+          set catchUpStr to (catch up automatically of theRule) as text
+        end try
+      end if
+    end try
+    return taskId & tab & taskName & tab & taskNote & tab & cDate & tab & mDate & tab & duDate & tab & defDate & tab & isFlagged & tab & isCompleted & tab & compDate & tab & projName & tab & tagStr & tab & planDate & tab & recurStr & tab & schedStr & tab & basedOnStr & tab & catchUpStr & tab & estMin
   end using terms from
 end taskRecord`;
 
@@ -155,9 +209,21 @@ export function parseProjects(output: string): OFProject[] {
       status: ((fields[3] ?? 'active').replace(' status', '')) as OFProject['status'],
       taskCount: parseInt(fields[4] ?? '0', 10),
       nextReviewDate: fields[5] || null,
-      reviewInterval: parseInt(fields[6] ?? '0', 10),
+      reviewIntervalSteps: fields[6] ? parseInt(fields[6], 10) : null,
+      reviewIntervalUnit: parseReviewUnit(fields[7]),
+      reviewIntervalFixed: fields[8] === 'true' ? true : fields[8] === 'false' ? false : null,
+      estimatedMinutes: fields[9] ? parseInt(fields[9], 10) : null,
     };
   });
+}
+
+function parseReviewUnit(value: string | undefined): OFProject['reviewIntervalUnit'] {
+  switch (value) {
+    case 'minute': case 'hour': case 'day':
+    case 'week': case 'month': case 'year':
+      return value;
+    default: return null;
+  }
 }
 
 export function parseFolders(output: string): OFFolder[] {

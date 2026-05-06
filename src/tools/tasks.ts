@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { zBool } from './_schema.js';
+import { zBool, zNullableInt } from './_schema.js';
 import { runAppleScript } from '../applescript/executor.js';
 import {
   buildCompleteTaskScript,
@@ -57,20 +57,25 @@ export function registerTaskTools(server: McpServer): void {
 
   server.tool(
     'update_task',
-    'Modify task properties: name, note, tags, dates, flagged, completed status',
+    'Modify task properties: name, note, tags, dates, flagged, completed status, repetition rule',
     {
       taskId: z.string().describe('OmniFocus task ID'),
       name: z.string().optional().describe('New task name'),
       note: z.string().optional().describe('New task note'),
       tags: z.array(z.string()).optional().describe('Replace all tags with these tag names'),
-      dueDate: z.string().optional().describe('Due date (e.g., "April 30, 2026")'),
-      deferDate: z.string().optional().describe('Defer date (e.g., "April 25, 2026")'),
-      plannedDate: z.string().optional().describe('Planned date — when you intend to work on this (OmniFocus 4)'),
+      dueDate: z.string().optional().describe('Due date (e.g., "April 30, 2026"); empty string clears'),
+      deferDate: z.string().optional().describe('Defer date; empty string clears'),
+      plannedDate: z.string().optional().describe('Planned date — when you intend to work on this (OmniFocus 4); empty string clears'),
       flagged: zBool().optional().describe('Set flagged status'),
       completed: zBool().optional().describe('Set completion status (true=complete, false=reopen)'),
+      recurrence: z.string().optional().describe('iCalendar RRULE string (e.g., "FREQ=WEEKLY;INTERVAL=1"). Empty string removes the repetition rule. Required when setting any repetition* field.'),
+      repetitionSchedule: z.enum(['regularly', 'from-completion']).optional().describe('How to compute next occurrence: regularly (relative to assigned dates) or from-completion (when marked done/dropped)'),
+      repetitionBasedOn: z.enum(['due', 'planned', 'defer']).optional().describe('Which date drives the repetition'),
+      catchUpAutomatically: zBool().optional().describe('Whether to skip past occurrences when resolving (regularly-scheduled rules only)'),
+      estimatedMinutes: zNullableInt().optional().describe('Estimated time in whole minutes; pass null to clear'),
     },
-    async ({ taskId, name, note, tags, dueDate, deferDate, plannedDate, flagged, completed }) => {
-      const output = await runAppleScript(buildUpdateTaskScript(taskId, { name, note, tags, dueDate, deferDate, plannedDate, flagged, completed }));
+    async (args) => {
+      const output = await runAppleScript(buildUpdateTaskScript(args.taskId, args));
       return { content: [{ type: 'text', text: JSON.stringify({ success: true, taskId: output.trim() }) }] };
     },
   );

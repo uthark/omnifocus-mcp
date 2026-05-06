@@ -134,20 +134,57 @@ describe('buildUpdateProjectScript', () => {
     expect(script).toContain('mark dropped proj');
     expect(script).not.toContain('set status of proj to dropped');
   });
+
+  it('sets review interval as steps/unit/fixed record', () => {
+    const script = buildUpdateProjectScript('proj123', {
+      reviewInterval: { steps: 2, unit: 'week', fixed: false },
+    });
+    expect(script).toContain('set review interval of proj to {unit:week, steps:2, fixed:false}');
+  });
+
+  it('sets next review date', () => {
+    const script = buildUpdateProjectScript('proj123', { nextReviewDate: 'May 15, 2026' });
+    expect(script).toContain('set next review date of proj to date "May 15, 2026"');
+  });
+
+  it('resets next review date when empty string', () => {
+    const script = buildUpdateProjectScript('proj123', { nextReviewDate: '' });
+    expect(script).toContain('set next review date of proj to missing value');
+  });
+
+  it('sets estimated minutes', () => {
+    const script = buildUpdateProjectScript('proj123', { estimatedMinutes: 120 });
+    expect(script).toContain('set estimated minutes of proj to 120');
+  });
+
+  it('clears estimated minutes when null', () => {
+    const script = buildUpdateProjectScript('proj123', { estimatedMinutes: null });
+    expect(script).toContain('set estimated minutes of proj to missing value');
+  });
 });
 
 describe('parseProjects', () => {
   it('parses project records', () => {
-    const output = 'proj1\tMy Project\tSome notes\tactive\t5\t2026-05-01T00:00:00\t604800';
+    const output = 'proj1\tMy Project\tSome notes\tactive\t5\t2026-05-01T00:00:00\t1\tweek\ttrue\t30';
     const projects = parseProjects(output);
     expect(projects).toEqual([{
       id: 'proj1', name: 'My Project', note: 'Some notes', status: 'active',
-      taskCount: 5, nextReviewDate: '2026-05-01T00:00:00', reviewInterval: 604800,
+      taskCount: 5, nextReviewDate: '2026-05-01T00:00:00',
+      reviewIntervalSteps: 1, reviewIntervalUnit: 'week', reviewIntervalFixed: true,
+      estimatedMinutes: 30,
     }]);
   });
 
+  it('returns nulls for missing review interval fields', () => {
+    const output = 'proj1\tMy Project\tSome notes\tactive\t5\t\t\t\t\t';
+    const projects = parseProjects(output);
+    expect(projects[0].reviewIntervalSteps).toBeNull();
+    expect(projects[0].reviewIntervalUnit).toBeNull();
+    expect(projects[0].reviewIntervalFixed).toBeNull();
+  });
+
   it('strips " status" suffix from status field', () => {
-    const output = 'proj1\tMy Project\t\tactive status\t5\t\t0';
+    const output = 'proj1\tMy Project\t\tactive status\t5\t\t\t\t\t';
     const projects = parseProjects(output);
     expect(projects[0].status).toBe('active');
   });

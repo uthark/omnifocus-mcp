@@ -12,6 +12,11 @@ export interface OFTask {
   completionDate: string | null;
   projectName: string | null;
   tags: string[];
+  recurrence: string | null;
+  repetitionSchedule: 'regularly' | 'from-completion' | null;
+  repetitionBasedOn: 'due' | 'planned' | 'defer' | null;
+  catchUpAutomatically: boolean | null;
+  estimatedMinutes: number | null;
 }
 
 export interface OFProject {
@@ -21,7 +26,10 @@ export interface OFProject {
   status: 'active' | 'on hold' | 'done' | 'dropped';
   taskCount: number;
   nextReviewDate: string | null;
-  reviewInterval: number;
+  reviewIntervalSteps: number | null;
+  reviewIntervalUnit: 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year' | null;
+  reviewIntervalFixed: boolean | null;
+  estimatedMinutes: number | null;
 }
 
 export interface OFTag {
