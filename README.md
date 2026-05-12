@@ -27,7 +27,7 @@ Add to `.mcp.json` (project or `~/.claude/settings.json`):
 }
 ```
 
-## Tools (33 total)
+## Tools (34 total)
 
 ### Inbox
 - **get_inbox_tasks** — List tasks from system, private, or work inbox (paginated, excludes completed by default)
@@ -61,6 +61,7 @@ Add to `.mcp.json` (project or `~/.claude/settings.json`):
 ### Tags
 - **get_tags** — List tags (with limit)
 - **create_tag** — Create tag (supports nesting via parent tag ID)
+- **update_tag** — Rename a tag and/or reparent it (pass empty parentTagId to move to document root)
 - **delete_tag** — Delete a tag by ID (refuses if it has child tags; tasks are untagged, not deleted)
 
 ### Review

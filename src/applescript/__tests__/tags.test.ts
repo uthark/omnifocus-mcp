@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   buildGetTagsScript,
   buildCreateTagScript,
+  buildUpdateTagScript,
   buildDeleteTagScript,
   parseTagsOutput,
 } from '../tags.js';
@@ -30,6 +31,60 @@ describe('buildCreateTagScript', () => {
   it('includes parent tag lookup when parentTagId is provided', () => {
     const script = buildCreateTagScript('subtag', 'parent123');
     expect(script).toContain('parent123');
+  });
+});
+
+describe('buildUpdateTagScript', () => {
+  it('looks up tag by id', () => {
+    const script = buildUpdateTagScript('kqVn2buRATj', { name: 'New Name' });
+    expect(script).toContain('kqVn2buRATj');
+    expect(script).toContain('first flattened tag whose id is');
+  });
+
+  it('renames the tag when name is provided', () => {
+    const script = buildUpdateTagScript('tag1', { name: 'Renamed' });
+    expect(script).toContain('set name of t to "Renamed"');
+  });
+
+  it('escapes special characters in name', () => {
+    const script = buildUpdateTagScript('tag1', { name: 'Foo "Bar"' });
+    expect(script).toContain('Foo \\"Bar\\"');
+  });
+
+  it('moves the tag under a parent when parentTagId is non-empty', () => {
+    const script = buildUpdateTagScript('tag1', { parentTagId: 'parent123' });
+    expect(script).toContain('first flattened tag whose id is "parent123"');
+    expect(script).toContain('move t to end of tags of parentTag');
+  });
+
+  it('moves the tag to root when parentTagId is empty string', () => {
+    const script = buildUpdateTagScript('tag1', { parentTagId: '' });
+    expect(script).toContain('move t to end of tags');
+    expect(script).not.toContain('move t to end of tags of parentTag');
+  });
+
+  it('handles both rename and reparent in one call', () => {
+    const script = buildUpdateTagScript('tag1', {
+      name: 'Renamed',
+      parentTagId: 'parent123',
+    });
+    expect(script).toContain('set name of t to "Renamed"');
+    expect(script).toContain('move t to end of tags of parentTag');
+  });
+
+  it('returns id and name of the updated tag', () => {
+    const script = buildUpdateTagScript('tag1', { name: 'X' });
+    expect(script).toContain('return id of t & tab & name of t');
+  });
+
+  it('escapes special characters in tag id', () => {
+    const script = buildUpdateTagScript('id"with"quotes', { name: 'X' });
+    expect(script).toContain('id\\"with\\"quotes');
+  });
+
+  it('escapes special characters in parentTagId', () => {
+    const script = buildUpdateTagScript('tag1', { parentTagId: 'pid"x"' });
+    expect(script).toContain('pid\\"x\\"');
   });
 });
 

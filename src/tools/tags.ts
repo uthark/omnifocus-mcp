@@ -5,6 +5,7 @@ import { zBool } from './_schema.js';
 import {
   buildGetTagsScript,
   buildCreateTagScript,
+  buildUpdateTagScript,
   buildDeleteTagScript,
   parseTagsOutput,
 } from '../applescript/tags.js';
@@ -46,6 +47,46 @@ export function registerTagTools(server: McpServer): void {
           {
             type: 'text',
             text: JSON.stringify({ id: output.trim(), name }),
+          },
+        ],
+      };
+    },
+  );
+
+  server.tool(
+    'update_tag',
+    'Rename a tag and/or move it under a different parent tag. Pass empty string for parentTagId to move the tag to the document root.',
+    {
+      tagId: z.string().describe('OmniFocus tag ID'),
+      name: z.string().optional().describe('New tag name'),
+      parentTagId: z
+        .string()
+        .optional()
+        .describe('New parent tag ID; pass empty string to move to document root'),
+    },
+    async ({ tagId, name, parentTagId }) => {
+      if (name === undefined && parentTagId === undefined) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                success: false,
+                error: 'no changes specified (set name and/or parentTagId)',
+              }),
+            },
+          ],
+        };
+      }
+      const output = await runAppleScript(
+        buildUpdateTagScript(tagId, { name, parentTagId }),
+      );
+      const [id, tagName] = output.trim().split('\t');
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({ success: true, tagId: id, name: tagName }),
           },
         ],
       };

@@ -49,6 +49,34 @@ tell application "OmniFocus"
 end tell`;
 }
 
+export function buildUpdateTagScript(
+  tagId: string,
+  options: { name?: string; parentTagId?: string },
+): string {
+  const escapedId = escapeForAppleScript(tagId);
+  const lines: string[] = [
+    `tell application "OmniFocus"`,
+    `  tell default document`,
+    `    set t to first flattened tag whose id is "${escapedId}"`,
+  ];
+  if (options.name !== undefined) {
+    lines.push(`    set name of t to "${escapeForAppleScript(options.name)}"`);
+  }
+  if (options.parentTagId !== undefined) {
+    if (options.parentTagId === '') {
+      lines.push(`    move t to end of tags`);
+    } else {
+      const escapedParent = escapeForAppleScript(options.parentTagId);
+      lines.push(`    set parentTag to first flattened tag whose id is "${escapedParent}"`);
+      lines.push(`    move t to end of tags of parentTag`);
+    }
+  }
+  lines.push(`    return id of t & tab & name of t`);
+  lines.push(`  end tell`);
+  lines.push(`end tell`);
+  return lines.join('\n');
+}
+
 export function buildDeleteTagScript(tagId: string): string {
   const escapedId = escapeForAppleScript(tagId);
   return [
