@@ -54,7 +54,10 @@ describe('buildGetForecastScript', () => {
 describe('buildGetCompletedTasksScript', () => {
   it('queries tasks completed since a date', () => {
     const script = buildGetCompletedTasksScript('2026-04-15', 10);
-    expect(script).toContain('2026-04-15');
+    expect(script).toContain('set year of _dv to 2026');
+    expect(script).toContain('set month of _dv to 4');
+    expect(script).toContain('set day of _dv to 15');
+    expect(script).toContain('set sinceDate to _dv');
     expect(script).toContain('completion date');
   });
 });
@@ -77,7 +80,10 @@ describe('buildGetFlaggedTasksScript', () => {
 
   it('filters by defer date when deferBefore is provided', () => {
     const script = buildGetFlaggedTasksScript(20, '2026-04-27');
-    expect(script).toContain('2026-04-27');
+    expect(script).toContain('set year of _dv to 2026');
+    expect(script).toContain('set month of _dv to 4');
+    expect(script).toContain('set day of _dv to 27');
+    expect(script).toContain('set cutoff to _dv');
     expect(script).toContain('defer date');
   });
 

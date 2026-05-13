@@ -54,8 +54,12 @@ describe('buildProcessInboxTaskScript', () => {
 
   it('includes date setting when dates provided', () => {
     const script = buildProcessInboxTaskScript('task123', { dueDate: '2026-05-01', deferDate: '2026-04-25' });
-    expect(script).toContain('2026-05-01');
-    expect(script).toContain('2026-04-25');
+    expect(script).toContain('set due date of t to _dv');
+    expect(script).toContain('set defer date of t to _dv');
+    expect(script).toContain('set month of _dv to 5');
+    expect(script).toContain('set day of _dv to 1');
+    expect(script).toContain('set month of _dv to 4');
+    expect(script).toContain('set day of _dv to 25');
   });
 
   it('includes flagged setting', () => {
@@ -66,13 +70,17 @@ describe('buildProcessInboxTaskScript', () => {
 
   it('normalizes PM dates to 24-hour', () => {
     const script = buildProcessInboxTaskScript('task123', { deferDate: 'April 28, 2026 1:00 PM' });
-    expect(script).toContain('date "April 28, 2026 13:00"');
+    expect(script).toContain('set hours of _dv to 13');
+    expect(script).toContain('set defer date of t to _dv');
     expect(script).not.toContain('PM');
   });
 
   it('sets planned date', () => {
     const script = buildProcessInboxTaskScript('task123', { plannedDate: 'April 30, 2026' });
-    expect(script).toContain('set planned date of t to date "April 30, 2026"');
+    expect(script).toContain('set year of _dv to 2026');
+    expect(script).toContain('set month of _dv to 4');
+    expect(script).toContain('set day of _dv to 30');
+    expect(script).toContain('set planned date of t to _dv');
   });
 });
 
@@ -95,13 +103,17 @@ describe('buildQuickEntryScript', () => {
 
   it('normalizes PM dates to 24-hour', () => {
     const script = buildQuickEntryScript('Buy milk', { deferDate: 'April 28, 2026 1:00 PM' });
-    expect(script).toContain('date "April 28, 2026 13:00"');
+    expect(script).toContain('set hours of _dv to 13');
+    expect(script).toContain('set defer date of t to _dv');
     expect(script).not.toContain('PM');
   });
 
   it('sets planned date', () => {
     const script = buildQuickEntryScript('Buy milk', { plannedDate: 'April 30, 2026' });
-    expect(script).toContain('set planned date of t to date "April 30, 2026"');
+    expect(script).toContain('set year of _dv to 2026');
+    expect(script).toContain('set month of _dv to 4');
+    expect(script).toContain('set day of _dv to 30');
+    expect(script).toContain('set planned date of t to _dv');
   });
 });
 

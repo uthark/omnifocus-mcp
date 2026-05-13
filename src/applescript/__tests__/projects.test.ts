@@ -144,7 +144,10 @@ describe('buildUpdateProjectScript', () => {
 
   it('sets next review date', () => {
     const script = buildUpdateProjectScript('proj123', { nextReviewDate: 'May 15, 2026' });
-    expect(script).toContain('set next review date of proj to date "May 15, 2026"');
+    expect(script).toContain('set year of _dv to 2026');
+    expect(script).toContain('set month of _dv to 5');
+    expect(script).toContain('set day of _dv to 15');
+    expect(script).toContain('set next review date of proj to _dv');
   });
 
   it('resets next review date when empty string', () => {

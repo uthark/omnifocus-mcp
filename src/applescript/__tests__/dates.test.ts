@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeDateString } from '../dates.js';
+import { normalizeDateString, parseDateComponents, buildSetDateBlock } from '../dates.js';
 
 describe('normalizeDateString', () => {
   describe('AM/PM with full date', () => {
@@ -70,5 +70,85 @@ describe('normalizeDateString', () => {
     it('trims surrounding whitespace', () => {
       expect(normalizeDateString('  April 28, 2026  ')).toBe('April 28, 2026');
     });
+  });
+});
+
+describe('parseDateComponents', () => {
+  it('parses ISO date', () => {
+    expect(parseDateComponents('2026-05-18')).toEqual({
+      year: 2026, month: 5, day: 18, hours: 0, minutes: 0, seconds: 0,
+    });
+  });
+
+  it('parses ISO datetime with T separator', () => {
+    expect(parseDateComponents('2026-05-18T09:30:45')).toEqual({
+      year: 2026, month: 5, day: 18, hours: 9, minutes: 30, seconds: 45,
+    });
+  });
+
+  it('parses ISO datetime with space separator', () => {
+    expect(parseDateComponents('2026-05-18 17:00')).toEqual({
+      year: 2026, month: 5, day: 18, hours: 17, minutes: 0, seconds: 0,
+    });
+  });
+
+  it('parses US slash date', () => {
+    expect(parseDateComponents('5/18/2026')).toEqual({
+      year: 2026, month: 5, day: 18, hours: 0, minutes: 0, seconds: 0,
+    });
+  });
+
+  it('parses US slash datetime', () => {
+    expect(parseDateComponents('5/18/2026 17:00')).toEqual({
+      year: 2026, month: 5, day: 18, hours: 17, minutes: 0, seconds: 0,
+    });
+  });
+
+  it('parses long form with month name', () => {
+    expect(parseDateComponents('May 18, 2026')).toEqual({
+      year: 2026, month: 5, day: 18, hours: 0, minutes: 0, seconds: 0,
+    });
+  });
+
+  it('parses long form with PM time after normalization', () => {
+    expect(parseDateComponents('April 28, 2026 1:00 PM')).toEqual({
+      year: 2026, month: 4, day: 28, hours: 13, minutes: 0, seconds: 0,
+    });
+  });
+
+  it('throws on unrecognized input', () => {
+    expect(() => parseDateComponents('not a date')).toThrow(/Unrecognized date format/);
+  });
+});
+
+describe('buildSetDateBlock', () => {
+  it('emits property-assignment block bypassing the AppleScript date parser', () => {
+    const block = buildSetDateBlock('defer date of t', '2026-05-18T09:00:00');
+    expect(block).toContain('set _dv to current date');
+    expect(block).toContain('set day of _dv to 1');
+    expect(block).toContain('set year of _dv to 2026');
+    expect(block).toContain('set month of _dv to 5');
+    expect(block).toContain('set day of _dv to 18');
+    expect(block).toContain('set hours of _dv to 9');
+    expect(block).toContain('set defer date of t to _dv');
+    expect(block).not.toContain('date "2026-05-18');
+  });
+
+  it('emits missing value for empty string', () => {
+    expect(buildSetDateBlock('defer date of t', '')).toBe('    set defer date of t to missing value');
+  });
+
+  it('respects custom indent', () => {
+    const block = buildSetDateBlock('cutoff', '2026-05-18', '');
+    expect(block.startsWith('using terms from scripting additions')).toBe(true);
+    expect(block).toContain('set _dv to current date');
+  });
+
+  it('sets day=1 BEFORE year/month to avoid month-rollover', () => {
+    const block = buildSetDateBlock('defer date of t', '2026-02-15');
+    const dayResetIdx = block.indexOf('set day of _dv to 1');
+    const monthIdx = block.indexOf('set month of _dv to 2');
+    expect(dayResetIdx).toBeGreaterThanOrEqual(0);
+    expect(monthIdx).toBeGreaterThan(dayResetIdx);
   });
 });

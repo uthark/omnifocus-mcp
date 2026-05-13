@@ -1,5 +1,5 @@
 import { escapeForAppleScript } from './executor.js';
-import { normalizeDateString } from './dates.js';
+import { buildSetDateBlock } from './dates.js';
 import { APPLESCRIPT_HELPERS, buildPaginatedTaskQuery } from './parser.js';
 
 export function buildGetProjectsDueForReviewScript(limit: number): string {
@@ -89,11 +89,14 @@ export function buildGetForecastScript(days: number, limit: number): string {
 }
 
 export function buildGetCompletedTasksScript(since: string, limit: number): string {
-  const escaped = escapeForAppleScript(normalizeDateString(since));
+  // Preamble is interpolated after `    ` in the template, so first line
+  // inherits that indent — strip leading indent from `buildSetDateBlock` and
+  // re-indent the rest to align with the surrounding 4-space block.
+  const preamble = buildSetDateBlock('sinceDate', since, '').replace(/\n/g, '\n    ');
   return buildPaginatedTaskQuery(
     'flattened tasks whose completed is true and completion date >= sinceDate',
     limit,
-    `set sinceDate to date "${escaped}"`,
+    preamble,
   );
 }
 
@@ -104,11 +107,11 @@ export function buildGetFlaggedTasksScript(limit: number, deferBefore?: string):
       limit,
     );
   }
-  const escaped = escapeForAppleScript(normalizeDateString(deferBefore));
+  const setCutoff = buildSetDateBlock('cutoff', deferBefore);
   return `
 tell application "OmniFocus"
   tell default document
-    set cutoff to date "${escaped}"
+${setCutoff}
     set allTasks to flattened tasks whose completed is false and flagged is true
     set matchCount to 0
     set results to ""
