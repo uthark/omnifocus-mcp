@@ -1,12 +1,9 @@
 import { escapeForAppleScript } from './executor.js';
-import { normalizeDateString } from './dates.js';
+import { buildSetDateBlock } from './dates.js';
 import { buildPaginatedTaskQuery, APPLESCRIPT_HELPERS } from './parser.js';
 
 function setDateLine(target: string, value: string): string {
-  if (value === '') {
-    return `    set ${target} to missing value`;
-  }
-  return `    set ${target} to date "${escapeForAppleScript(normalizeDateString(value))}"`;
+  return buildSetDateBlock(target, value);
 }
 
 export function buildCompleteTaskScript(taskId: string): string {

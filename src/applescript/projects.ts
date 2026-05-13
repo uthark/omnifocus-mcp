@@ -1,5 +1,5 @@
 import { escapeForAppleScript } from './executor.js';
-import { normalizeDateString } from './dates.js';
+import { buildSetDateBlock } from './dates.js';
 import { APPLESCRIPT_HELPERS, buildOffsetTaskQuery } from './parser.js';
 
 export type ReviewIntervalUnit = 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year';
@@ -15,8 +15,7 @@ function reviewIntervalRecord(interval: ReviewInterval): string {
 }
 
 function setDateLine(target: string, value: string): string {
-  if (value === '') return `    set ${target} to missing value`;
-  return `    set ${target} to date "${escapeForAppleScript(normalizeDateString(value))}"`;
+  return buildSetDateBlock(target, value);
 }
 
 export function buildGetProjectsScript(options: { status?: string; limit?: number; folderId?: string; omitNotes?: boolean }): string {

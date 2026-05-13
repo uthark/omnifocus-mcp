@@ -62,18 +62,26 @@ describe('buildUpdateTaskScript', () => {
     expect(script).toContain('Updated');
     expect(script).toContain('Some note');
     expect(script).toContain('flagged');
-    expect(script).toContain('2026-05-01');
+    // Date is now emitted via property assignment, not a date "..." string.
+    expect(script).toContain('set year of _dv to 2026');
+    expect(script).toContain('set month of _dv to 5');
+    expect(script).toContain('set day of _dv to 1');
+    expect(script).toContain('set due date of t to _dv');
   });
 
   it('converts PM date times to 24-hour before emitting AppleScript', () => {
     const script = buildUpdateTaskScript('task123', { deferDate: 'April 28, 2026 1:00 PM' });
-    expect(script).toContain('date "April 28, 2026 13:00"');
+    expect(script).toContain('set hours of _dv to 13');
+    expect(script).toContain('set minutes of _dv to 0');
+    expect(script).toContain('set defer date of t to _dv');
     expect(script).not.toContain('PM');
   });
 
   it('converts AM date times to 24-hour before emitting AppleScript', () => {
     const script = buildUpdateTaskScript('task123', { dueDate: 'April 28, 2026 9:00 AM' });
-    expect(script).toContain('date "April 28, 2026 09:00"');
+    expect(script).toContain('set hours of _dv to 9');
+    expect(script).toContain('set minutes of _dv to 0');
+    expect(script).toContain('set due date of t to _dv');
   });
 
   it('handles tag replacement', () => {
@@ -84,7 +92,10 @@ describe('buildUpdateTaskScript', () => {
 
   it('sets planned date', () => {
     const script = buildUpdateTaskScript('task123', { plannedDate: 'April 30, 2026' });
-    expect(script).toContain('set planned date of t to date "April 30, 2026"');
+    expect(script).toContain('set year of _dv to 2026');
+    expect(script).toContain('set month of _dv to 4');
+    expect(script).toContain('set day of _dv to 30');
+    expect(script).toContain('set planned date of t to _dv');
   });
 
   it('clears planned date when empty string is passed', () => {
