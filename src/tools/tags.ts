@@ -13,13 +13,14 @@ import {
 export function registerTagTools(server: McpServer): void {
   server.tool(
     'get_tags',
-    'List tags in OmniFocus. Pass nameOnly:true to return a flat array of names — much smaller payload when you only need to verify whether a tag exists.',
+    'List tags in OmniFocus. Pass nameOnly:true to return a flat array of names — much smaller payload when you only need to verify whether a tag exists. Pass contains to filter by case-insensitive substring match on tag name.',
     {
-      limit: z.coerce.number().int().min(1).max(500).default(50).describe('Max tags to return'),
+      limit: z.coerce.number().int().min(1).max(500).default(50).describe('Max tags to return (applies after contains filter)'),
       nameOnly: zBool().default(false).describe('Return a flat array of tag names instead of {id,name} objects'),
+      contains: z.string().optional().describe('Filter to tags whose name contains this substring (case-insensitive)'),
     },
-    async ({ limit, nameOnly }) => {
-      const output = await runAppleScript(buildGetTagsScript(limit));
+    async ({ limit, nameOnly, contains }) => {
+      const output = await runAppleScript(buildGetTagsScript(limit, contains));
       const tags = parseTagsOutput(output);
       const payload = nameOnly ? tags.map((t) => t.name) : tags;
       return {

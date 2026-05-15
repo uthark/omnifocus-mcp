@@ -14,6 +14,21 @@ describe('buildGetTagsScript', () => {
     expect(script).toContain('flattened tags');
     expect(script).toContain('50');
   });
+
+  it('omits the contains filter clause when contains is not provided', () => {
+    const script = buildGetTagsScript(50);
+    expect(script).not.toContain('whose name contains');
+  });
+
+  it('includes a whose name contains clause when contains is provided', () => {
+    const script = buildGetTagsScript(50, 'Michael');
+    expect(script).toContain('flattened tags whose name contains "Michael"');
+  });
+
+  it('escapes special characters in the contains substring', () => {
+    const script = buildGetTagsScript(50, 'foo "bar"');
+    expect(script).toContain('whose name contains "foo \\"bar\\""');
+  });
 });
 
 describe('buildCreateTagScript', () => {

@@ -2,12 +2,15 @@ import { escapeForAppleScript } from './executor.js';
 import { splitRecords, splitFields, unescapeField, APPLESCRIPT_HELPERS } from './parser.js';
 import type { OFTag } from '../types.js';
 
-export function buildGetTagsScript(limit: number): string {
+export function buildGetTagsScript(limit: number, contains?: string): string {
+  const filterClause = contains
+    ? ` whose name contains "${escapeForAppleScript(contains)}"`
+    : '';
   return `
 tell application "OmniFocus"
   tell default document
     set output to ""
-    set allTags to flattened tags
+    set allTags to flattened tags${filterClause}
     set tagCount to count of allTags
     set maxCount to tagCount
     if maxCount > ${limit} then set maxCount to ${limit}
