@@ -12,6 +12,7 @@ import {
   buildGetTaskScript,
 } from '../applescript/tasks.js';
 import { parsePaginatedTasks, parseTaskFields, splitFields } from '../applescript/parser.js';
+import { compactJson } from './_compact.js';
 
 export function registerTaskTools(server: McpServer): void {
   server.tool(
@@ -21,7 +22,7 @@ export function registerTaskTools(server: McpServer): void {
     async ({ taskId }) => {
       const output = await runAppleScript(buildGetTaskScript(taskId));
       const task = parseTaskFields(splitFields(output.trim()));
-      return { content: [{ type: 'text', text: JSON.stringify(task, null, 2) }] };
+      return { content: [{ type: 'text', text: compactJson(task) }] };
     },
   );
 
@@ -31,7 +32,7 @@ export function registerTaskTools(server: McpServer): void {
     { taskId: z.string().describe('OmniFocus task ID') },
     async ({ taskId }) => {
       const output = await runAppleScript(buildCompleteTaskScript(taskId));
-      return { content: [{ type: 'text', text: JSON.stringify({ success: true, taskId: output.trim() }) }] };
+      return { content: [{ type: 'text', text: compactJson({ success: true, taskId: output.trim() }) }] };
     },
   );
 
@@ -41,7 +42,7 @@ export function registerTaskTools(server: McpServer): void {
     { taskId: z.string().describe('OmniFocus task ID') },
     async ({ taskId }) => {
       const output = await runAppleScript(buildUncompleteTaskScript(taskId));
-      return { content: [{ type: 'text', text: JSON.stringify({ success: true, taskId: output.trim() }) }] };
+      return { content: [{ type: 'text', text: compactJson({ success: true, taskId: output.trim() }) }] };
     },
   );
 
@@ -51,7 +52,7 @@ export function registerTaskTools(server: McpServer): void {
     { taskId: z.string().describe('OmniFocus task ID') },
     async ({ taskId }) => {
       await runAppleScript(buildDeleteTaskScript(taskId));
-      return { content: [{ type: 'text', text: JSON.stringify({ success: true }) }] };
+      return { content: [{ type: 'text', text: compactJson({ success: true }) }] };
     },
   );
 
@@ -76,7 +77,7 @@ export function registerTaskTools(server: McpServer): void {
     },
     async (args) => {
       const output = await runAppleScript(buildUpdateTaskScript(args.taskId, args));
-      return { content: [{ type: 'text', text: JSON.stringify({ success: true, taskId: output.trim() }) }] };
+      return { content: [{ type: 'text', text: compactJson({ success: true, taskId: output.trim() }) }] };
     },
   );
 
@@ -93,7 +94,7 @@ export function registerTaskTools(server: McpServer): void {
     async ({ taskId, subtasks }) => {
       const output = await runAppleScript(buildCreateSubtasksScript(taskId, subtasks));
       const ids = output.trim().split(',').filter((id) => id !== '');
-      return { content: [{ type: 'text', text: JSON.stringify({ success: true, subtaskIds: ids }) }] };
+      return { content: [{ type: 'text', text: compactJson({ success: true, subtaskIds: ids }) }] };
     },
   );
 
@@ -107,7 +108,7 @@ export function registerTaskTools(server: McpServer): void {
     async ({ query, limit }) => {
       const output = await runAppleScript(buildSearchTasksScript(query, limit));
       const result = parsePaginatedTasks(output);
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      return { content: [{ type: 'text', text: compactJson(result) }] };
     },
   );
 }
