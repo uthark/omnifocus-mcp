@@ -13,6 +13,7 @@ import {
   buildGetFlaggedTasksScript,
 } from '../applescript/review.js';
 import { parseProjects, parsePaginatedTasks, parseStaleTasks } from '../applescript/parser.js';
+import { compactJson } from './_compact.js';
 
 export function registerReviewTools(server: McpServer): void {
   server.tool(
@@ -24,7 +25,7 @@ export function registerReviewTools(server: McpServer): void {
     async ({ limit }) => {
       const output = await runAppleScript(buildGetProjectsDueForReviewScript(limit));
       const projects = parseProjects(output);
-      return { content: [{ type: 'text', text: JSON.stringify(projects, null, 2) }] };
+      return { content: [{ type: 'text', text: compactJson(projects) }] };
     },
   );
 
@@ -34,7 +35,7 @@ export function registerReviewTools(server: McpServer): void {
     { projectId: z.string().describe('OmniFocus project ID') },
     async ({ projectId }) => {
       const output = await runAppleScript(buildMarkProjectReviewedScript(projectId));
-      return { content: [{ type: 'text', text: JSON.stringify({ success: true, projectId: output.trim() }) }] };
+      return { content: [{ type: 'text', text: compactJson({ success: true, projectId: output.trim() }) }] };
     },
   );
 
@@ -49,7 +50,7 @@ export function registerReviewTools(server: McpServer): void {
     async ({ projectId, daysSinceModified, limit }) => {
       const output = await runAppleScript(buildGetStaleTasksScript(projectId, daysSinceModified, limit), 30_000);
       const result = parseStaleTasks(output);
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      return { content: [{ type: 'text', text: compactJson(result) }] };
     },
   );
 
@@ -62,7 +63,7 @@ export function registerReviewTools(server: McpServer): void {
     async ({ limit }) => {
       const output = await runAppleScript(buildGetOverdueTasksScript(limit));
       const result = parsePaginatedTasks(output);
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      return { content: [{ type: 'text', text: compactJson(result) }] };
     },
   );
 
@@ -76,7 +77,7 @@ export function registerReviewTools(server: McpServer): void {
     async ({ days, limit }) => {
       const output = await runAppleScript(buildGetForecastScript(days, limit));
       const result = parsePaginatedTasks(output);
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      return { content: [{ type: 'text', text: compactJson(result) }] };
     },
   );
 
@@ -90,7 +91,7 @@ export function registerReviewTools(server: McpServer): void {
     async ({ since, limit }) => {
       const output = await runAppleScript(buildGetCompletedTasksScript(since, limit));
       const result = parsePaginatedTasks(output);
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      return { content: [{ type: 'text', text: compactJson(result) }] };
     },
   );
 
@@ -104,7 +105,7 @@ export function registerReviewTools(server: McpServer): void {
     async ({ tagNames, limit }) => {
       const output = await runAppleScript(buildGetTasksByTagScript(tagNames, limit), 30_000);
       const result = parsePaginatedTasks(output);
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      return { content: [{ type: 'text', text: compactJson(result) }] };
     },
   );
 
@@ -118,7 +119,7 @@ export function registerReviewTools(server: McpServer): void {
     async ({ projectId, limit }) => {
       const output = await runAppleScript(buildGetAvailableTasksScript(projectId, limit), 30_000);
       const result = parsePaginatedTasks(output);
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      return { content: [{ type: 'text', text: compactJson(result) }] };
     },
   );
 
@@ -132,7 +133,7 @@ export function registerReviewTools(server: McpServer): void {
     async ({ limit, deferBefore }) => {
       const output = await runAppleScript(buildGetFlaggedTasksScript(limit, deferBefore));
       const result = parsePaginatedTasks(output);
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      return { content: [{ type: 'text', text: compactJson(result) }] };
     },
   );
 }

@@ -10,6 +10,7 @@ import {
 } from '../applescript/inbox.js';
 import { parsePaginatedTasks } from '../applescript/parser.js';
 import { INBOX_SOURCES } from '../config.js';
+import { compactJson } from './_compact.js';
 
 export function registerInboxTools(server: McpServer): void {
   server.tool(
@@ -35,7 +36,7 @@ export function registerInboxTools(server: McpServer): void {
       if (omitNotes) {
         for (const t of result.items) delete (t as { note?: string }).note;
       }
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      return { content: [{ type: 'text', text: compactJson(result) }] };
     },
   );
 
@@ -53,7 +54,7 @@ export function registerInboxTools(server: McpServer): void {
     },
     async ({ taskId, projectId, tags, dueDate, deferDate, plannedDate, flagged }) => {
       const output = await runAppleScript(buildProcessInboxTaskScript(taskId, { projectId, tags, dueDate, deferDate, plannedDate, flagged }));
-      return { content: [{ type: 'text', text: JSON.stringify({ success: true, taskId: output.trim() }) }] };
+      return { content: [{ type: 'text', text: compactJson({ success: true, taskId: output.trim() }) }] };
     },
   );
 
@@ -72,7 +73,7 @@ export function registerInboxTools(server: McpServer): void {
     },
     async ({ name, note, projectId, tags, dueDate, deferDate, plannedDate, flagged }) => {
       const output = await runAppleScript(buildQuickEntryScript(name, { note, projectId, tags, dueDate, deferDate, plannedDate, flagged }));
-      return { content: [{ type: 'text', text: JSON.stringify({ success: true, taskId: output.trim() }) }] };
+      return { content: [{ type: 'text', text: compactJson({ success: true, taskId: output.trim() }) }] };
     },
   );
 }

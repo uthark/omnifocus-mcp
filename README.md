@@ -75,6 +75,10 @@ Add to `.mcp.json` (project or `~/.claude/settings.json`):
 - **get_available_tasks** — List actionable tasks in a project (not blocked, not deferred)
 - **get_tasks_by_tag** — List incomplete tasks matching any of the given tags (e.g., @waiting_for, @errands)
 
+## Response shape
+
+Tool responses are returned as single-line JSON with unset/empty fields omitted to reduce token usage. Specifically: `null`, `undefined`, `""`, `[]`, and empty objects are stripped from response payloads. `false` and `0` are preserved (they carry real values). Consumers should treat absent keys as unset — for example, a task with no due date will have no `dueDate` key at all rather than `dueDate: null`.
+
 ## Development
 
 ```bash

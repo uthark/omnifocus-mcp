@@ -9,6 +9,7 @@ import {
   buildDeleteTagScript,
   parseTagsOutput,
 } from '../applescript/tags.js';
+import { compactJson } from './_compact.js';
 
 export function registerTagTools(server: McpServer): void {
   server.tool(
@@ -24,7 +25,7 @@ export function registerTagTools(server: McpServer): void {
       const tags = parseTagsOutput(output);
       const payload = nameOnly ? tags.map((t) => t.name) : tags;
       return {
-        content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }],
+        content: [{ type: 'text', text: compactJson(payload) }],
       };
     },
   );
@@ -47,7 +48,7 @@ export function registerTagTools(server: McpServer): void {
         content: [
           {
             type: 'text',
-            text: JSON.stringify({ id: output.trim(), name }),
+            text: compactJson({ id: output.trim(), name }),
           },
         ],
       };
@@ -71,7 +72,7 @@ export function registerTagTools(server: McpServer): void {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
+              text: compactJson({
                 success: false,
                 error: 'no changes specified (set name and/or parentTagId)',
               }),
@@ -87,7 +88,7 @@ export function registerTagTools(server: McpServer): void {
         content: [
           {
             type: 'text',
-            text: JSON.stringify({ success: true, tagId: id, name: tagName }),
+            text: compactJson({ success: true, tagId: id, name: tagName }),
           },
         ],
       };
@@ -108,7 +109,7 @@ export function registerTagTools(server: McpServer): void {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
+              text: compactJson({
                 deleted: false,
                 error: 'has-children',
                 childTagCount,
@@ -124,7 +125,7 @@ export function registerTagTools(server: McpServer): void {
         content: [
           {
             type: 'text',
-            text: JSON.stringify({ deleted: true, tasksUntagged }),
+            text: compactJson({ deleted: true, tasksUntagged }),
           },
         ],
       };

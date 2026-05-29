@@ -16,6 +16,7 @@ import {
   buildConvertTaskToProjectScript,
 } from '../applescript/projects.js';
 import { parseProjects, parsePaginatedTasks, parseFolders } from '../applescript/parser.js';
+import { compactJson } from './_compact.js';
 
 export function registerProjectTools(server: McpServer): void {
   server.tool(
@@ -33,7 +34,7 @@ export function registerProjectTools(server: McpServer): void {
       if (omitNotes) {
         for (const p of projects) delete (p as { note?: string }).note;
       }
-      return { content: [{ type: 'text', text: JSON.stringify(projects, null, 2) }] };
+      return { content: [{ type: 'text', text: compactJson(projects) }] };
     },
   );
 
@@ -55,10 +56,10 @@ export function registerProjectTools(server: McpServer): void {
             const [id, projName] = line.split('\t');
             return { id, name: projName };
           });
-        return { content: [{ type: 'text', text: JSON.stringify({ matches }) }] };
+        return { content: [{ type: 'text', text: compactJson({ matches }) }] };
       }
       const [id, projName] = output.split('\t');
-      return { content: [{ type: 'text', text: JSON.stringify({ id, name: projName }) }] };
+      return { content: [{ type: 'text', text: compactJson({ id, name: projName }) }] };
     },
   );
 
@@ -73,7 +74,7 @@ export function registerProjectTools(server: McpServer): void {
     async ({ projectId, offset, limit }) => {
       const output = await runAppleScript(buildGetProjectTasksScript(projectId, offset, limit));
       const result = parsePaginatedTasks(output);
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      return { content: [{ type: 'text', text: compactJson(result) }] };
     },
   );
 
@@ -116,7 +117,7 @@ export function registerProjectTools(server: McpServer): void {
       const output = await runAppleScript(buildCreateProjectScript(args.name, {
         note: args.note, tags: args.tags, reviewInterval, folderId: args.folderId, tasks: args.tasks,
       }));
-      return { content: [{ type: 'text', text: JSON.stringify({ success: true, projectId: output.trim() }) }] };
+      return { content: [{ type: 'text', text: compactJson({ success: true, projectId: output.trim() }) }] };
     },
   );
 
@@ -137,7 +138,7 @@ export function registerProjectTools(server: McpServer): void {
       const output = await runAppleScript(buildUpdateProjectScript(args.projectId, {
         status: args.status, reviewInterval, nextReviewDate: args.nextReviewDate, name: args.name, note: args.note, estimatedMinutes: args.estimatedMinutes,
       }));
-      return { content: [{ type: 'text', text: JSON.stringify({ success: true, projectId: output.trim() }) }] };
+      return { content: [{ type: 'text', text: compactJson({ success: true, projectId: output.trim() }) }] };
     },
   );
 
@@ -150,7 +151,7 @@ export function registerProjectTools(server: McpServer): void {
     async ({ limit }) => {
       const output = await runAppleScript(buildGetFoldersScript(limit));
       const folders = parseFolders(output);
-      return { content: [{ type: 'text', text: JSON.stringify(folders, null, 2) }] };
+      return { content: [{ type: 'text', text: compactJson(folders) }] };
     },
   );
 
@@ -164,7 +165,7 @@ export function registerProjectTools(server: McpServer): void {
     async ({ name, parentFolderId }) => {
       const output = await runAppleScript(buildCreateFolderScript(name, parentFolderId));
       const [folderId, folderName] = output.trim().split('\t');
-      return { content: [{ type: 'text', text: JSON.stringify({ success: true, folderId, name: folderName }) }] };
+      return { content: [{ type: 'text', text: compactJson({ success: true, folderId, name: folderName }) }] };
     },
   );
 
@@ -178,7 +179,7 @@ export function registerProjectTools(server: McpServer): void {
     async ({ folderId, name }) => {
       const output = await runAppleScript(buildUpdateFolderScript(folderId, name));
       const [id, folderName] = output.trim().split('\t');
-      return { content: [{ type: 'text', text: JSON.stringify({ success: true, folderId: id, name: folderName }) }] };
+      return { content: [{ type: 'text', text: compactJson({ success: true, folderId: id, name: folderName }) }] };
     },
   );
 
@@ -191,7 +192,7 @@ export function registerProjectTools(server: McpServer): void {
     },
     async ({ projectId, folderId }) => {
       const output = await runAppleScript(buildMoveProjectScript(projectId, folderId));
-      return { content: [{ type: 'text', text: JSON.stringify({ success: true, projectId: output.trim() }) }] };
+      return { content: [{ type: 'text', text: compactJson({ success: true, projectId: output.trim() }) }] };
     },
   );
 
@@ -204,7 +205,7 @@ export function registerProjectTools(server: McpServer): void {
     },
     async ({ taskId, folderId }) => {
       const output = await runAppleScript(buildConvertTaskToProjectScript(taskId, { folderId }));
-      return { content: [{ type: 'text', text: JSON.stringify({ success: true, projectId: output.trim() }) }] };
+      return { content: [{ type: 'text', text: compactJson({ success: true, projectId: output.trim() }) }] };
     },
   );
 
@@ -219,9 +220,9 @@ export function registerProjectTools(server: McpServer): void {
       const result = output.trim();
       if (result.startsWith('error:not-empty:')) {
         const count = result.split(':')[2];
-        return { content: [{ type: 'text', text: JSON.stringify({ success: false, error: `Folder is not empty — move or complete its ${count} project(s) first` }) }] };
+        return { content: [{ type: 'text', text: compactJson({ success: false, error: `Folder is not empty — move or complete its ${count} project(s) first` }) }] };
       }
-      return { content: [{ type: 'text', text: JSON.stringify({ success: true }) }] };
+      return { content: [{ type: 'text', text: compactJson({ success: true }) }] };
     },
   );
 }
