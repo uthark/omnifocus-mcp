@@ -155,6 +155,20 @@ describe('buildGetTasksByTagScript', () => {
     expect(script).toContain('escapeField');
     expect(script).toContain('taskRecord');
   });
+
+  it('scopes tasks to a folder subtree when folderId is given', () => {
+    const script = buildGetTasksByTagScript(['Work'], 10, 'fld123');
+    expect(script).toContain('fld123');
+    expect(script).toContain('flattened folder whose id');
+    expect(script).toContain('folderProjIds');
+    expect(script).toContain('every flattened project of targetFolder');
+  });
+
+  it('omits folder scoping when folderId is absent', () => {
+    const script = buildGetTasksByTagScript(['Work'], 10);
+    expect(script).not.toContain('folderProjIds');
+    expect(script).not.toContain('targetFolder');
+  });
 });
 
 describe('parseProjects (review context)', () => {

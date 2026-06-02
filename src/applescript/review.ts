@@ -253,12 +253,26 @@ tell application "OmniFocus"
 end tell`;
 }
 
-export function buildGetTasksByTagScript(tagNames: string[], limit: number): string {
+export function buildGetTasksByTagScript(tagNames: string[], limit: number, folderId?: string): string {
   const escapedTags = tagNames.map((t) => `"${escapeForAppleScript(t)}"`).join(', ');
+  const folderSetup = folderId
+    ? `
+    set targetFolder to first flattened folder whose id is "${escapeForAppleScript(folderId)}"
+    set folderProjIds to (id of every flattened project of targetFolder)`
+    : '';
+  const folderGuard = folderId
+    ? `set keepT to true
+          try
+            set cpid to id of containing project of t
+            if folderProjIds does not contain cpid then set keepT to false
+          on error
+            set keepT to false
+          end try`
+    : 'set keepT to true';
   return `
 tell application "OmniFocus"
   tell default document
-    set targetTagNames to {${escapedTags}}
+    set targetTagNames to {${escapedTags}}${folderSetup}
     set seenIds to {}
     set matchCount to 0
     set results to ""
@@ -268,12 +282,15 @@ tell application "OmniFocus"
       repeat with t in tagTasks
         set tid to id of t
         if seenIds does not contain tid then
-          set end of seenIds to tid
-          set matchCount to matchCount + 1
-          if matchCount > ${limit} then
-            -- already have enough results, just keep counting
-          else
-            set results to results & my taskRecord(t) & linefeed
+          ${folderGuard}
+          if keepT then
+            set end of seenIds to tid
+            set matchCount to matchCount + 1
+            if matchCount > ${limit} then
+              -- already have enough results, just keep counting
+            else
+              set results to results & my taskRecord(t) & linefeed
+            end if
           end if
         end if
       end repeat

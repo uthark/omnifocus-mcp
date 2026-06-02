@@ -75,7 +75,7 @@ Add to `.mcp.json` (project or `~/.claude/settings.json`):
 - **get_completed_tasks** — Tasks completed since a given date
 - **get_flagged_tasks** — List all flagged incomplete tasks (your "hot list")
 - **get_available_tasks** — List actionable tasks in a project (not blocked, not deferred)
-- **get_tasks_by_tag** — List incomplete tasks matching any of the given tags (e.g., @waiting_for, @errands); `sortByAge`/`minAgeDays` surface aging commitments with a `daysWaiting` field
+- **get_tasks_by_tag** — List incomplete tasks matching any of the given tags (e.g., @waiting_for, @errands); `sortByAge`/`minAgeDays` surface aging commitments with a `daysWaiting` field; `folderId` (optional) restricts to tasks whose project lives in a specific folder (area of responsibility), keeping work and personal commitment reviews separate — mirrors `get_review_digest`'s `folderId`
 
 ## Response shape
 

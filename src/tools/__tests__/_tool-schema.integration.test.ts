@@ -116,4 +116,26 @@ describe('tool schema integration — stringified primitives now parse', () => {
       expect(r).toEqual({ taskId: 'abc' });
     });
   });
+
+  describe('get_tasks_by_tag shape', () => {
+    const schema = z.object({
+      tagNames: z.array(z.string()).min(1),
+      limit: z.coerce.number().int().min(1).max(100).default(20),
+      minAgeDays: z.coerce.number().int().min(0).optional(),
+      sortByAge: zBool().default(false),
+      folderId: z.string().optional(),
+    });
+
+    it('parses folderId alongside stringified aging params', () => {
+      const r = schema.parse({ tagNames: ['Yuliya'], folderId: 'fld123', sortByAge: 'true', minAgeDays: '30' });
+      expect(r.folderId).toBe('fld123');
+      expect(r.sortByAge).toBe(true);
+      expect(r.minAgeDays).toBe(30);
+    });
+
+    it('leaves folderId undefined when omitted', () => {
+      const r = schema.parse({ tagNames: ['Yuliya'] });
+      expect(r.folderId).toBeUndefined();
+    });
+  });
 });
