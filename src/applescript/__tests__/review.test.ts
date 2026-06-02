@@ -255,6 +255,6 @@ describe('buildBatchMarkReviewedScript', () => {
 
   it('escapes quotes in ids', () => {
     const script = buildBatchMarkReviewedScript(['weird"id']);
-    expect(script).toContain('\\"id');
+    expect(script).toContain('weird\\"id');
   });
 });
