@@ -112,8 +112,9 @@ the raw signals; the skill orders/escalates the review by them:
 
 **Performance:** one AppleScript invocation; scanning tasks for
 `plannedCount` + `lastActivity` is heavier than the existing count-only scan.
-Use a 30s timeout (matching `get_stale_tasks` / `get_available_tasks`). If too
-slow at scale, gate `plannedCount`/`lastActivity` behind an `enrich` flag.
+Use a 60s timeout (longer than the 30s single-project queries, since this scans
+the whole portfolio). If too slow at scale, gate `plannedCount`/`lastActivity`
+behind an `enrich` flag.
 
 ### 4.2 Commitment aging (two directions)
 
@@ -132,7 +133,10 @@ dates, which is enough to classify direction client-side). Add:
 - `minAgeDays`: only return tasks older than N days (server-side filter)
 - `sortByAge`: bool — sort descending by `daysWaiting`
 
-where `daysWaiting = now − (effective defer date if present else creation date)`.
+where `daysWaiting = now − (defer date if present else creation date)`. (The
+task's own defer date — when you set it to "waiting" — is the meaningful signal
+here, so plain defer date is used rather than OmniFocus's inherited *effective*
+defer date.)
 The skill resolves the `waiting for` tag and the person tags (format `"First
 Last"`, via `get_tags`), queries them, and uses each returned task's tag list to
 classify direction (delegated vs owed) and choose the follow-up. Output adds a

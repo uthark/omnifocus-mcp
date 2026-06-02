@@ -114,7 +114,7 @@ export function registerReviewTools(server: McpServer): void {
 
   server.tool(
     'get_tasks_by_tag',
-    'List incomplete tasks that have any of the specified tags. Use for GTD context lists like @waiting_for, @errands, @agenda, or person tags. Pass sortByAge/minAgeDays to surface aging commitments oldest-first (each task includes daysWaiting and its full tag list, so callers can tell "waiting on someone" from "owed to someone").',
+    'List incomplete tasks that have any of the specified tags. Use for GTD context lists like @waiting_for, @errands, @agenda, or person tags. Pass sortByAge/minAgeDays to surface aging commitments oldest-first (each task includes daysWaiting and its full tag list, so callers can tell "waiting on someone" from "owed to someone"). When sortByAge/minAgeDays is used, total reflects the count after age filtering.',
     {
       tagNames: z.array(z.string()).min(1).describe('Tag names to filter by (returns tasks matching ANY of these tags)'),
       limit: z.coerce.number().int().min(1).max(100).default(20).describe('Max tasks to return'),
