@@ -12,6 +12,7 @@ import {
   buildGetAvailableTasksScript,
   buildGetFlaggedTasksScript,
   buildGetReviewDigestScript,
+  buildBatchMarkReviewedScript,
 } from '../applescript/review.js';
 import { parseProjects, parsePaginatedTasks, parseStaleTasks, parseReviewDigest } from '../applescript/parser.js';
 import { compactJson } from './_compact.js';
@@ -38,6 +39,19 @@ export function registerReviewTools(server: McpServer): void {
     async ({ projectId }) => {
       const output = await runAppleScript(buildMarkProjectReviewedScript(projectId));
       return { content: [{ type: 'text', text: compactJson({ success: true, projectId: output.trim() }) }] };
+    },
+  );
+
+  server.tool(
+    'batch_mark_reviewed',
+    'Mark multiple projects as reviewed in a single pass (resets their review timers). Use to bulk-clear the healthy remainder during a review sweep.',
+    {
+      projectIds: z.array(z.string()).min(1).describe('OmniFocus project IDs to mark reviewed'),
+    },
+    async ({ projectIds }) => {
+      const output = await runAppleScript(buildBatchMarkReviewedScript(projectIds), 60_000);
+      const reviewedCount = parseInt(output.trim(), 10) || 0;
+      return { content: [{ type: 'text', text: compactJson({ success: true, reviewedCount }) }] };
     },
   );
 
