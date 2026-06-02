@@ -138,11 +138,11 @@ Last"`, via `get_tags`), queries them, and uses each returned task's tag list to
 classify direction (delegated vs owed) and choose the follow-up. Output adds a
 computed `daysWaiting` per task.
 
-### 4.3 `batch_mark_reviewed` (optional)
+### 4.3 `batch_mark_reviewed` (in MVP)
 
-Accept `projectIds: string[]`, loop `mark reviewed`. Only valuable for the
-one-time 200-backlog sweep (bulk-clear the healthy remainder). Defer if leaner
-is preferred; the skill can otherwise loop `mark_project_reviewed`.
+Accept `projectIds: string[]`, loop `mark reviewed` in a single AppleScript pass,
+return the count/ids marked. Justified for MVP: the one-time 200-backlog sweep
+would otherwise be ~150 sequential `mark_project_reviewed` round-trips.
 
 ## 5. Component 2 — `gtd-review` skill (3 modes)
 
@@ -254,4 +254,4 @@ Follow existing patterns:
   spelling/format via `get_tags` at runtime, and treats a bare person tag
   (no `waiting for`) as a commitment *owed* (§4.2).
 - Daily mode: include or skip inbox-zero handoff to `gtd-inbox-review`?
-- Whether to ship `batch_mark_reviewed` in MVP or defer.
+- `batch_mark_reviewed`: **in MVP** (resolved).
