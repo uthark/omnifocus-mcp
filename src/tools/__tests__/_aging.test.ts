@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { OFTask } from '../../types.js';
 import { daysWaiting, withDaysWaiting, filterAndSortByAge } from '../_aging.js';
 
-const now = new Date('2026-06-01T00:00:00');
+const now = new Date('2026-06-01T00:00:00Z');
 
 function makeTask(over: Partial<OFTask>): OFTask {
   return {

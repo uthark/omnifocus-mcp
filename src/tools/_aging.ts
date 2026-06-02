@@ -1,21 +1,14 @@
 import type { OFTask } from '../types.js';
+import { parseUtcDate, utcMidnight, diffDays } from '../utils/date.js';
 
 export interface AgedTask extends OFTask {
   daysWaiting: number;
 }
 
-/** Parse a naive ISO date string as UTC to avoid DST-induced day shifts. */
-function parseUtcDate(s: string): Date {
-  return new Date(s.includes('Z') || s.includes('+') ? s : s + 'Z');
-}
-
 /** Days since the task started waiting: from its defer date if set, else its creation date. */
 export function daysWaiting(task: OFTask, now: Date = new Date()): number {
   const ref = task.deferDate ?? task.creationDate;
-  // Anchor both ends to UTC midnight to make the diff DST-immune
-  const refUtc = parseUtcDate(ref);
-  const nowUtc = new Date(now.toISOString().slice(0, 10) + 'T00:00:00Z');
-  return Math.floor((nowUtc.getTime() - refUtc.getTime()) / 86_400_000);
+  return diffDays(utcMidnight(now), parseUtcDate(ref));
 }
 
 export function withDaysWaiting(task: OFTask, now: Date = new Date()): AgedTask {

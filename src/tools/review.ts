@@ -123,6 +123,9 @@ export function registerReviewTools(server: McpServer): void {
     },
     async ({ tagNames, limit, minAgeDays, sortByAge }) => {
       const aging = sortByAge || minAgeDays !== undefined;
+      // When aging, fetch a wider window so sort/filter sees more than the first `limit`
+      // in list order. Caveat: tags with >500 incomplete tasks are truncated to 500 before
+      // aging — acceptable for typical @waiting_for / person-tag lists.
       const fetchLimit = aging ? Math.max(limit, 500) : limit;
       const output = await runAppleScript(buildGetTasksByTagScript(tagNames, fetchLimit), 30_000);
       const parsed = parsePaginatedTasks(output);

@@ -1,4 +1,5 @@
 import type { OFFolder, OFProject, OFTask, StaleTask, PaginatedResult, ReviewDigestEntry } from '../types.js';
+import { parseUtcDate, utcMidnight, diffDays } from '../utils/date.js';
 
 export function unescapeField(value: string): string {
   if (value === '') return '';
@@ -217,19 +218,10 @@ export function parseProjects(output: string): OFProject[] {
   });
 }
 
-function diffDays(a: Date, b: Date): number {
-  return Math.floor((a.getTime() - b.getTime()) / 86_400_000);
-}
-
-function parseUtcDate(s: string): Date {
-  // Treat ISO-like strings without timezone as UTC to avoid DST shifts
-  return new Date(s.includes('Z') || s.includes('+') ? s : s + 'Z');
-}
-
 export function parseReviewDigest(output: string, now: Date = new Date()): PaginatedResult<ReviewDigestEntry> {
   const { total, lines } = parsePaginatedOutput(output);
   // Use a UTC-anchored "now" for day-diff calculations so DST doesn't skew counts
-  const nowUtc = new Date(now.toISOString().slice(0, 10) + 'T00:00:00Z');
+  const nowUtc = utcMidnight(now);
   const items = lines.map((line) => {
     const f = splitFields(line);
     const incompleteCount = parseInt(f[6] ?? '0', 10);

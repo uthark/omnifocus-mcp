@@ -113,7 +113,7 @@ describe('parseTaskFields', () => {
 });
 
 describe('parseReviewDigest', () => {
-  const now = new Date('2026-06-01T00:00:00');
+  const now = new Date('2026-06-01T00:00:00Z');
 
   it('parses an enriched, stalled (blocked) project row', () => {
     const output = [
