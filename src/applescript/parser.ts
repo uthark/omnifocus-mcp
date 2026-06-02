@@ -228,6 +228,8 @@ function parseUtcDate(s: string): Date {
 
 export function parseReviewDigest(output: string, now: Date = new Date()): PaginatedResult<ReviewDigestEntry> {
   const { total, lines } = parsePaginatedOutput(output);
+  // Use a UTC-anchored "now" for day-diff calculations so DST doesn't skew counts
+  const nowUtc = new Date(now.toISOString().slice(0, 10) + 'T00:00:00Z');
   const items = lines.map((line) => {
     const f = splitFields(line);
     const incompleteCount = parseInt(f[6] ?? '0', 10);
@@ -240,8 +242,6 @@ export function parseReviewDigest(output: string, now: Date = new Date()): Pagin
     const stallReason: ReviewDigestEntry['stallReason'] = stalled
       ? (incompleteCount === 0 ? 'empty' : 'blocked-or-deferred')
       : null;
-    // Use a UTC-anchored "now" for day-diff calculations so DST doesn't skew counts
-    const nowUtc = new Date(now.toISOString().slice(0, 10) + 'T00:00:00Z');
     return {
       id: f[0] ?? '',
       name: unescapeField(f[1] ?? ''),

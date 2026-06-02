@@ -173,4 +173,10 @@ describe('parseReviewDigest', () => {
     expect(r.total).toBe(0);
     expect(r.items).toEqual([]);
   });
+
+  it('returns empty for empty output', () => {
+    const r = parseReviewDigest('', now);
+    expect(r.total).toBe(0);
+    expect(r.items).toEqual([]);
+  });
 });

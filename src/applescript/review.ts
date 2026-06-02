@@ -171,6 +171,7 @@ export function buildGetReviewDigestScript(options: {
     ? `set targetFolder to first flattened folder whose id is "${escapeForAppleScript(options.folderId)}"
     set candidates to (flattened projects of targetFolder whose ${statusClause})`
     : `set candidates to (flattened projects whose ${statusClause})`;
+  // scope=due includes only projects OmniFocus considers due (review date set and in the past); projects with no review date are intentionally excluded.
   const dueGuard = options.scope === 'due'
     ? `if (next review date of p is missing value) or (next review date of p >= now) then set includeP to false`
     : '';
