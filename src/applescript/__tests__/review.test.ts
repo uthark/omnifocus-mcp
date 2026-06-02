@@ -23,10 +23,20 @@ describe('buildGetProjectsDueForReviewScript', () => {
 });
 
 describe('buildMarkProjectReviewedScript', () => {
-  it('marks project as reviewed', () => {
+  it('marks reviewed via last review date, not the uncompilable "mark reviewed" verb', () => {
     const script = buildMarkProjectReviewedScript('proj123');
-    expect(script).toContain('proj123');
-    expect(script).toContain('mark reviewed');
+    expect(script).toContain('set last review date of proj to (current date)');
+    expect(script).not.toContain('mark reviewed');
+  });
+
+  it('targets the project by id', () => {
+    const script = buildMarkProjectReviewedScript('proj123');
+    expect(script).toContain('whose id is "proj123"');
+  });
+
+  it('escapes quotes in the id', () => {
+    const script = buildMarkProjectReviewedScript('weird"id');
+    expect(script).toContain('weird\\"id');
   });
 });
 
@@ -261,9 +271,10 @@ describe('buildBatchMarkReviewedScript', () => {
     expect(script).toContain('c3');
   });
 
-  it('marks each project reviewed and counts successes', () => {
+  it('marks each project reviewed via last review date and counts successes', () => {
     const script = buildBatchMarkReviewedScript(['a1']);
-    expect(script).toContain('mark reviewed');
+    expect(script).toContain('set last review date of proj to (current date)');
+    expect(script).not.toContain('mark reviewed');
     expect(script).toContain('okCount');
   });
 
