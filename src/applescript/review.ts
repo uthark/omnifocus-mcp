@@ -234,6 +234,25 @@ end tell
 ${APPLESCRIPT_HELPERS}`;
 }
 
+export function buildBatchMarkReviewedScript(projectIds: string[]): string {
+  const list = projectIds.map((id) => `"${escapeForAppleScript(id)}"`).join(', ');
+  return `
+tell application "OmniFocus"
+  tell default document
+    set projIds to {${list}}
+    set okCount to 0
+    repeat with pid in projIds
+      try
+        set proj to first flattened project whose id is (pid as text)
+        mark reviewed proj
+        set okCount to okCount + 1
+      end try
+    end repeat
+    return okCount as text
+  end tell
+end tell`;
+}
+
 export function buildGetTasksByTagScript(tagNames: string[], limit: number): string {
   const escapedTags = tagNames.map((t) => `"${escapeForAppleScript(t)}"`).join(', ');
   return `

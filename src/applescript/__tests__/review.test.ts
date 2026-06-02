@@ -10,6 +10,7 @@ import {
   buildGetAvailableTasksScript,
   buildGetTasksByTagScript,
   buildGetReviewDigestScript,
+  buildBatchMarkReviewedScript,
 } from '../review.js';
 import { parseProjects, parsePaginatedTasks } from '../parser.js';
 
@@ -235,5 +236,25 @@ describe('buildGetReviewDigestScript', () => {
     const script = buildGetReviewDigestScript(base);
     expect(script).toContain('escapeField');
     expect(script).toContain('getTagNames');
+  });
+});
+
+describe('buildBatchMarkReviewedScript', () => {
+  it('includes every project id', () => {
+    const script = buildBatchMarkReviewedScript(['a1', 'b2', 'c3']);
+    expect(script).toContain('a1');
+    expect(script).toContain('b2');
+    expect(script).toContain('c3');
+  });
+
+  it('marks each project reviewed and counts successes', () => {
+    const script = buildBatchMarkReviewedScript(['a1']);
+    expect(script).toContain('mark reviewed');
+    expect(script).toContain('okCount');
+  });
+
+  it('escapes quotes in ids', () => {
+    const script = buildBatchMarkReviewedScript(['weird"id']);
+    expect(script).toContain('\\"id');
   });
 });
