@@ -17,6 +17,7 @@ import {
 import { parseProjects, parsePaginatedTasks, parseStaleTasks, parseReviewDigest } from '../applescript/parser.js';
 import { compactJson } from './_compact.js';
 import { zBool } from './_schema.js';
+import { withDaysWaiting, filterAndSortByAge } from './_aging.js';
 
 export function registerReviewTools(server: McpServer): void {
   server.tool(
@@ -113,14 +114,24 @@ export function registerReviewTools(server: McpServer): void {
 
   server.tool(
     'get_tasks_by_tag',
-    'List incomplete tasks that have any of the specified tags. Use this to review GTD context lists like @waiting_for, @errands, @agenda.',
+    'List incomplete tasks that have any of the specified tags. Use for GTD context lists like @waiting_for, @errands, @agenda, or person tags. Pass sortByAge/minAgeDays to surface aging commitments oldest-first (each task includes daysWaiting and its full tag list, so callers can tell "waiting on someone" from "owed to someone").',
     {
       tagNames: z.array(z.string()).min(1).describe('Tag names to filter by (returns tasks matching ANY of these tags)'),
       limit: z.coerce.number().int().min(1).max(100).default(20).describe('Max tasks to return'),
+      minAgeDays: z.coerce.number().int().min(0).optional().describe('Only return tasks that have been waiting at least this many days (by defer date, else creation date)'),
+      sortByAge: zBool().default(false).describe('Sort returned tasks oldest-waiting first'),
     },
-    async ({ tagNames, limit }) => {
-      const output = await runAppleScript(buildGetTasksByTagScript(tagNames, limit), 30_000);
-      const result = parsePaginatedTasks(output);
+    async ({ tagNames, limit, minAgeDays, sortByAge }) => {
+      const aging = sortByAge || minAgeDays !== undefined;
+      const fetchLimit = aging ? Math.max(limit, 500) : limit;
+      const output = await runAppleScript(buildGetTasksByTagScript(tagNames, fetchLimit), 30_000);
+      const parsed = parsePaginatedTasks(output);
+      if (!aging) {
+        return { content: [{ type: 'text', text: compactJson(parsed) }] };
+      }
+      const aged = parsed.items.map((t) => withDaysWaiting(t));
+      const filtered = filterAndSortByAge(aged, { minAgeDays, sortByAge });
+      const result = { total: filtered.length, items: filtered.slice(0, limit) };
       return { content: [{ type: 'text', text: compactJson(result) }] };
     },
   );
