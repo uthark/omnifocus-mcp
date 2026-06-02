@@ -9,6 +9,7 @@ import {
   buildGetFlaggedTasksScript,
   buildGetAvailableTasksScript,
   buildGetTasksByTagScript,
+  buildGetReviewDigestScript,
 } from '../review.js';
 import { parseProjects, parsePaginatedTasks } from '../parser.js';
 
@@ -178,5 +179,61 @@ describe('parsePaginatedTasks (review context)', () => {
     expect(result.total).toBe(1);
     expect(result.items[0].name).toBe('Overdue task');
     expect(result.items[0].dueDate).toBe('2026-04-01T00:00:00');
+  });
+});
+
+describe('buildGetReviewDigestScript', () => {
+  const base = { scope: 'due' as const, includeOnHold: false, onlyStalled: false, limit: 200, offset: 0 };
+
+  it('scope=due filters by next review date', () => {
+    const script = buildGetReviewDigestScript(base);
+    expect(script).toContain('next review date');
+    expect(script).toContain('current date');
+  });
+
+  it('scope=all-active does not filter by review date in the guard', () => {
+    const script = buildGetReviewDigestScript({ ...base, scope: 'all-active' });
+    expect(script).not.toContain('next review date of p >=');
+  });
+
+  it('defaults to active projects only', () => {
+    const script = buildGetReviewDigestScript(base);
+    expect(script).toContain('whose status is active');
+  });
+
+  it('includeOnHold widens the status clause', () => {
+    const script = buildGetReviewDigestScript({ ...base, includeOnHold: true });
+    expect(script).toContain('on hold');
+  });
+
+  it('onlyStalled adds an availability guard', () => {
+    const script = buildGetReviewDigestScript({ ...base, onlyStalled: true });
+    expect(script).toContain('if availCount > 0 then set includeP to false');
+  });
+
+  it('scopes to a folder when folderId is given', () => {
+    const script = buildGetReviewDigestScript({ ...base, folderId: 'fld123' });
+    expect(script).toContain('fld123');
+    expect(script).toContain('flattened projects of targetFolder');
+  });
+
+  it('counts Planned next actions and computes availability', () => {
+    const script = buildGetReviewDigestScript(base);
+    expect(script).toContain(',Planned,');
+    expect(script).toContain('effective defer date');
+    expect(script).toContain('blocked of t is false');
+  });
+
+  it('emits a TOTAL header and honors limit/offset', () => {
+    const script = buildGetReviewDigestScript({ ...base, limit: 50, offset: 10 });
+    expect(script).toContain('"TOTAL:"');
+    expect(script).toContain('emitted < 50');
+    expect(script).toContain('matchCount > 10');
+  });
+
+  it('includes the APPLESCRIPT_HELPERS', () => {
+    const script = buildGetReviewDigestScript(base);
+    expect(script).toContain('escapeField');
+    expect(script).toContain('getTagNames');
   });
 });
