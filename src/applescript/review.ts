@@ -256,7 +256,8 @@ end tell`;
 export function buildGetTasksByTagScript(tagNames: string[], limit: number, folderId?: string): string {
   const escapedTags = tagNames.map((t) => `"${escapeForAppleScript(t)}"`).join(', ');
   const folderSetup = folderId
-    ? `set targetFolder to first flattened folder whose id is "${escapeForAppleScript(folderId)}"
+    ? `
+    set targetFolder to first flattened folder whose id is "${escapeForAppleScript(folderId)}"
     set folderProjIds to (id of every flattened project of targetFolder)`
     : '';
   const folderGuard = folderId
@@ -271,8 +272,7 @@ export function buildGetTasksByTagScript(tagNames: string[], limit: number, fold
   return `
 tell application "OmniFocus"
   tell default document
-    set targetTagNames to {${escapedTags}}
-    ${folderSetup}
+    set targetTagNames to {${escapedTags}}${folderSetup}
     set seenIds to {}
     set matchCount to 0
     set results to ""
