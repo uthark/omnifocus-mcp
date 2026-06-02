@@ -16,6 +16,7 @@ import {
 } from '../applescript/review.js';
 import { parseProjects, parsePaginatedTasks, parseStaleTasks, parseReviewDigest } from '../applescript/parser.js';
 import { compactJson } from './_compact.js';
+import { compactDigest } from './_digest.js';
 import { zBool } from './_schema.js';
 import { withDaysWaiting, filterAndSortByAge } from './_aging.js';
 
@@ -170,22 +171,24 @@ export function registerReviewTools(server: McpServer): void {
 
   server.tool(
     'get_review_digest',
-    'Portfolio review digest: one row per project with stall, next-action (Planned), deadline, and last-activity signals for fast GTD weekly-review triage. scope=due returns projects past their review date; scope=all-active returns every active project (use for the one-time backlog pass).',
+    'Portfolio review digest: one row per project with stall, next-action (Planned), deadline, and last-activity signals for fast GTD weekly-review triage. scope=due returns projects past their review date; scope=all-active returns every active project (use for the one-time backlog pass). Output is compact by default — each row carries only its triage signal (id, name, and any of availableCount/stalled/stallReason/plannedCount/flagged/daysUntilDue/daysOverdueForReview/daysSinceActivity that is non-default), plus a portfolio summary; absent fields mean the default (e.g. no plannedCount ⇒ 0). Pass verbose:true for the full per-row shape including ISO dates and status.',
     {
       scope: z.enum(['due', 'all-active']).default('due').describe('due = past review date; all-active = every active project'),
       folderId: z.string().optional().describe('Restrict the scan to a single folder (area of responsibility)'),
       includeOnHold: zBool().default(false).describe('Include on-hold (someday/maybe) projects'),
       onlyStalled: zBool().default(false).describe('Only return projects with no available next action'),
+      verbose: zBool().default(false).describe('Return the full per-row shape (ISO dates, status, all counts) instead of the compact triage shape'),
       limit: z.coerce.number().int().min(1).max(500).default(200).describe('Max projects to return'),
       offset: z.coerce.number().int().min(0).default(0).describe('Pagination offset'),
     },
-    async ({ scope, folderId, includeOnHold, onlyStalled, limit, offset }) => {
+    async ({ scope, folderId, includeOnHold, onlyStalled, verbose, limit, offset }) => {
       const output = await runAppleScript(
         buildGetReviewDigestScript({ scope, folderId, includeOnHold, onlyStalled, limit, offset }),
         60_000,
       );
       const result = parseReviewDigest(output);
-      return { content: [{ type: 'text', text: compactJson(result) }] };
+      const payload = verbose ? result : compactDigest(result, { folderScoped: folderId !== undefined });
+      return { content: [{ type: 'text', text: compactJson(payload) }] };
     },
   );
 }

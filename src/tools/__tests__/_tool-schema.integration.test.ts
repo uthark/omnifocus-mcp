@@ -117,6 +117,31 @@ describe('tool schema integration — stringified primitives now parse', () => {
     });
   });
 
+  describe('get_review_digest shape', () => {
+    const shape = z.object({
+      scope: z.enum(['due', 'all-active']).default('due'),
+      folderId: z.string().optional(),
+      includeOnHold: zBool().default(false),
+      onlyStalled: zBool().default(false),
+      verbose: zBool().default(false),
+      limit: z.coerce.number().int().min(1).max(500).default(200),
+      offset: z.coerce.number().int().min(0).default(0),
+    });
+
+    it('defaults verbose to false (compact is the default shape)', () => {
+      const r = shape.parse({ folderId: 'fld123' });
+      expect(r.verbose).toBe(false);
+      expect(r.scope).toBe('due');
+    });
+
+    it('parses stringified verbose alongside other booleans', () => {
+      const r = shape.parse({ verbose: 'true', onlyStalled: 'true', limit: '50' });
+      expect(r.verbose).toBe(true);
+      expect(r.onlyStalled).toBe(true);
+      expect(r.limit).toBe(50);
+    });
+  });
+
   describe('get_tasks_by_tag shape', () => {
     const schema = z.object({
       tagNames: z.array(z.string()).min(1),
