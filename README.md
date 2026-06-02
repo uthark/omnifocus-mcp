@@ -27,7 +27,7 @@ Add to `.mcp.json` (project or `~/.claude/settings.json`):
 }
 ```
 
-## Tools (34 total)
+## Tools (36 total)
 
 ### Inbox
 - **get_inbox_tasks** — List tasks from system, private, or work inbox (paginated, excludes completed by default)
@@ -66,14 +66,16 @@ Add to `.mcp.json` (project or `~/.claude/settings.json`):
 
 ### Review
 - **get_projects_due_for_review** — Projects past their review date
+- **get_review_digest** — One row per project with stall / next-action (Planned) / deadline / last-activity signals; `scope=due` or `all-active`, optional `folderId`, `onlyStalled`, pagination — the engine for weekly review and the one-time backlog pass
 - **mark_project_reviewed** — Reset review timer
+- **batch_mark_reviewed** — Reset review timers for many projects in one call
 - **get_stale_tasks** — Tasks in a project not modified for N days
 - **get_overdue_tasks** — Tasks past due date
 - **get_forecast** — Tasks due in the next N days
 - **get_completed_tasks** — Tasks completed since a given date
 - **get_flagged_tasks** — List all flagged incomplete tasks (your "hot list")
 - **get_available_tasks** — List actionable tasks in a project (not blocked, not deferred)
-- **get_tasks_by_tag** — List incomplete tasks matching any of the given tags (e.g., @waiting_for, @errands)
+- **get_tasks_by_tag** — List incomplete tasks matching any of the given tags (e.g., @waiting_for, @errands); `sortByAge`/`minAgeDays` surface aging commitments with a `daysWaiting` field
 
 ## Response shape
 

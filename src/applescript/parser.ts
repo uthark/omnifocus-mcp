@@ -1,4 +1,5 @@
-import type { OFFolder, OFProject, OFTask, StaleTask, PaginatedResult } from '../types.js';
+import type { OFFolder, OFProject, OFTask, StaleTask, PaginatedResult, ReviewDigestEntry } from '../types.js';
+import { parseUtcDate, utcMidnight, diffDays } from '../utils/date.js';
 
 export function unescapeField(value: string): string {
   if (value === '') return '';
@@ -215,6 +216,44 @@ export function parseProjects(output: string): OFProject[] {
       estimatedMinutes: fields[9] ? parseInt(fields[9], 10) : null,
     };
   });
+}
+
+export function parseReviewDigest(output: string, now: Date = new Date()): PaginatedResult<ReviewDigestEntry> {
+  const { total, lines } = parsePaginatedOutput(output);
+  // Use a UTC-anchored "now" for day-diff calculations so DST doesn't skew counts
+  const nowUtc = utcMidnight(now);
+  const items = lines.map((line) => {
+    const f = splitFields(line);
+    const incompleteCount = parseInt(f[6] ?? '0', 10);
+    const availableCount = parseInt(f[7] ?? '0', 10);
+    const plannedCount = parseInt(f[8] ?? '0', 10);
+    const dueDate = f[5] || null;
+    const lastActivityDate = f[9] || null;
+    const nextReviewDate = f[10] || null;
+    const stalled = availableCount === 0;
+    const stallReason: ReviewDigestEntry['stallReason'] = stalled
+      ? (incompleteCount === 0 ? 'empty' : 'blocked-or-deferred')
+      : null;
+    return {
+      id: f[0] ?? '',
+      name: unescapeField(f[1] ?? ''),
+      folder: f[2] ? unescapeField(f[2]) : null,
+      status: ((f[3] ?? 'active').replace(' status', '')) as OFProject['status'],
+      flagged: f[4] === 'true',
+      dueDate,
+      daysUntilDue: dueDate ? diffDays(parseUtcDate(dueDate), nowUtc) : null,
+      incompleteCount,
+      availableCount,
+      plannedCount,
+      stalled,
+      stallReason,
+      lastActivityDate,
+      daysSinceActivity: lastActivityDate ? diffDays(nowUtc, parseUtcDate(lastActivityDate)) : null,
+      nextReviewDate,
+      daysOverdueForReview: nextReviewDate ? diffDays(nowUtc, parseUtcDate(nextReviewDate)) : null,
+    };
+  });
+  return { total, items };
 }
 
 function parseReviewUnit(value: string | undefined): OFProject['reviewIntervalUnit'] {

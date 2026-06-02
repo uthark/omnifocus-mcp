@@ -156,6 +156,103 @@ end tell
 ${APPLESCRIPT_HELPERS}`;
 }
 
+export function buildGetReviewDigestScript(options: {
+  scope: 'due' | 'all-active';
+  folderId?: string;
+  includeOnHold: boolean;
+  onlyStalled: boolean;
+  limit: number;
+  offset: number;
+}): string {
+  const statusClause = options.includeOnHold
+    ? 'status is active or status is on hold'
+    : 'status is active';
+  const projectSet = options.folderId
+    ? `set targetFolder to first flattened folder whose id is "${escapeForAppleScript(options.folderId)}"
+    set candidates to (flattened projects of targetFolder whose ${statusClause})`
+    : `set candidates to (flattened projects whose ${statusClause})`;
+  // scope=due includes only projects OmniFocus considers due (review date set and in the past); projects with no review date are intentionally excluded.
+  const dueGuard = options.scope === 'due'
+    ? `if (next review date of p is missing value) or (next review date of p >= now) then set includeP to false`
+    : '';
+  const stalledGuard = options.onlyStalled
+    ? `if availCount > 0 then set includeP to false`
+    : '';
+  return `
+tell application "OmniFocus"
+  tell default document
+    set now to current date
+    ${projectSet}
+    set matchCount to 0
+    set emitted to 0
+    set output to ""
+    repeat with p in candidates
+      set includeP to true
+      ${dueGuard}
+      if includeP then
+        set incompleteTasks to (flattened tasks of p whose completed is false)
+        set incompleteCount to count of incompleteTasks
+        set availCount to 0
+        set plannedCount to 0
+        set lastAct to missing value
+        repeat with t in incompleteTasks
+          set md to modification date of t
+          if lastAct is missing value or md > lastAct then set lastAct to md
+          set tnames to my getTagNames(t)
+          if ("," & tnames & ",") contains ",Planned," then set plannedCount to plannedCount + 1
+          if blocked of t is false then
+            set effDefer to effective defer date of t
+            if effDefer is missing value or effDefer < now then set availCount to availCount + 1
+          end if
+        end repeat
+        if lastAct is missing value then set lastAct to modification date of p
+        ${stalledGuard}
+        if includeP then
+          set matchCount to matchCount + 1
+          if matchCount > ${options.offset} and emitted < ${options.limit} then
+            set projId to id of p
+            set projName to my escapeField(name of p)
+            set folderName to ""
+            try
+              set c to container of p
+              if class of c is folder then set folderName to my escapeField(name of c)
+            end try
+            set projStatus to status of p as text
+            set isFlagged to flagged of p
+            set duDate to my formatDate(due date of p)
+            set lastActStr to my formatDate(lastAct)
+            set revDate to my formatDate(next review date of p)
+            set output to output & projId & tab & projName & tab & folderName & tab & projStatus & tab & isFlagged & tab & duDate & tab & incompleteCount & tab & availCount & tab & plannedCount & tab & lastActStr & tab & revDate & linefeed
+            set emitted to emitted + 1
+          end if
+        end if
+      end if
+    end repeat
+    return "TOTAL:" & matchCount & linefeed & output
+  end tell
+end tell
+${APPLESCRIPT_HELPERS}`;
+}
+
+export function buildBatchMarkReviewedScript(projectIds: string[]): string {
+  const list = projectIds.map((id) => `"${escapeForAppleScript(id)}"`).join(', ');
+  return `
+tell application "OmniFocus"
+  tell default document
+    set projIds to {${list}}
+    set okCount to 0
+    repeat with pid in projIds
+      try
+        set proj to first flattened project whose id is (pid as text)
+        mark reviewed proj
+        set okCount to okCount + 1
+      end try
+    end repeat
+    return okCount as text
+  end tell
+end tell`;
+}
+
 export function buildGetTasksByTagScript(tagNames: string[], limit: number): string {
   const escapedTags = tagNames.map((t) => `"${escapeForAppleScript(t)}"`).join(', ');
   return `

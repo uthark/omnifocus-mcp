@@ -5,6 +5,7 @@ import {
   splitFields,
   parsePaginatedOutput,
   parseTaskFields,
+  parseReviewDigest,
 } from '../parser.js';
 
 describe('unescapeField', () => {
@@ -108,5 +109,74 @@ describe('parseTaskFields', () => {
     const task = parseTaskFields(fields);
     expect(task.name).toBe('Line1\nLine2');
     expect(task.note).toBe('Note\twith\ttabs');
+  });
+});
+
+describe('parseReviewDigest', () => {
+  const now = new Date('2026-06-01T00:00:00Z');
+
+  it('parses an enriched, stalled (blocked) project row', () => {
+    const output = [
+      'TOTAL:1',
+      'p1\tMy Project\tWork\tactive status\ttrue\t2026-06-08T00:00:00\t5\t0\t0\t2026-03-01T00:00:00\t2026-05-01T00:00:00',
+    ].join('\n');
+    const r = parseReviewDigest(output, now);
+    expect(r.total).toBe(1);
+    const e = r.items[0];
+    expect(e.id).toBe('p1');
+    expect(e.name).toBe('My Project');
+    expect(e.folder).toBe('Work');
+    expect(e.status).toBe('active');
+    expect(e.flagged).toBe(true);
+    expect(e.dueDate).toBe('2026-06-08T00:00:00');
+    expect(e.daysUntilDue).toBe(7);
+    expect(e.incompleteCount).toBe(5);
+    expect(e.availableCount).toBe(0);
+    expect(e.plannedCount).toBe(0);
+    expect(e.stalled).toBe(true);
+    expect(e.stallReason).toBe('blocked-or-deferred');
+    expect(e.daysSinceActivity).toBe(92);
+    expect(e.daysOverdueForReview).toBe(31);
+  });
+
+  it('classifies an empty project as stalled/empty with null dates', () => {
+    const output = [
+      'TOTAL:1',
+      'p2\tEmpty\t\tactive status\tfalse\t\t0\t0\t0\t2026-05-20T00:00:00\t',
+    ].join('\n');
+    const e = parseReviewDigest(output, now).items[0];
+    expect(e.folder).toBeNull();
+    expect(e.flagged).toBe(false);
+    expect(e.dueDate).toBeNull();
+    expect(e.daysUntilDue).toBeNull();
+    expect(e.stalled).toBe(true);
+    expect(e.stallReason).toBe('empty');
+    expect(e.nextReviewDate).toBeNull();
+    expect(e.daysOverdueForReview).toBeNull();
+  });
+
+  it('a project with available actions is not stalled', () => {
+    const output = [
+      'TOTAL:1',
+      'p3\tHealthy\tHome\tactive status\tfalse\t\t4\t2\t1\t2026-05-31T00:00:00\t2026-06-15T00:00:00',
+    ].join('\n');
+    const e = parseReviewDigest(output, now).items[0];
+    expect(e.availableCount).toBe(2);
+    expect(e.plannedCount).toBe(1);
+    expect(e.stalled).toBe(false);
+    expect(e.stallReason).toBeNull();
+    expect(e.daysOverdueForReview).toBe(-14);
+  });
+
+  it('returns empty for a zero-match digest', () => {
+    const r = parseReviewDigest('TOTAL:0\n', now);
+    expect(r.total).toBe(0);
+    expect(r.items).toEqual([]);
+  });
+
+  it('returns empty for empty output', () => {
+    const r = parseReviewDigest('', now);
+    expect(r.total).toBe(0);
+    expect(r.items).toEqual([]);
   });
 });

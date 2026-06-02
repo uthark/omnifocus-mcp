@@ -55,3 +55,22 @@ export interface PaginatedResult<T> {
   total: number;
   items: T[];
 }
+
+export interface ReviewDigestEntry {
+  id: string;
+  name: string;
+  folder: string | null;
+  status: OFProject['status'];
+  flagged: boolean;
+  dueDate: string | null;
+  daysUntilDue: number | null;
+  incompleteCount: number;
+  availableCount: number;
+  plannedCount: number;
+  stalled: boolean;
+  stallReason: 'empty' | 'blocked-or-deferred' | null;
+  lastActivityDate: string | null;
+  daysSinceActivity: number | null;
+  nextReviewDate: string | null;
+  daysOverdueForReview: number | null;
+}
