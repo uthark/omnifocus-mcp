@@ -11,9 +11,11 @@ import {
   buildGetTasksByTagScript,
   buildGetAvailableTasksScript,
   buildGetFlaggedTasksScript,
+  buildGetReviewDigestScript,
 } from '../applescript/review.js';
-import { parseProjects, parsePaginatedTasks, parseStaleTasks } from '../applescript/parser.js';
+import { parseProjects, parsePaginatedTasks, parseStaleTasks, parseReviewDigest } from '../applescript/parser.js';
 import { compactJson } from './_compact.js';
+import { zBool } from './_schema.js';
 
 export function registerReviewTools(server: McpServer): void {
   server.tool(
@@ -133,6 +135,27 @@ export function registerReviewTools(server: McpServer): void {
     async ({ limit, deferBefore }) => {
       const output = await runAppleScript(buildGetFlaggedTasksScript(limit, deferBefore));
       const result = parsePaginatedTasks(output);
+      return { content: [{ type: 'text', text: compactJson(result) }] };
+    },
+  );
+
+  server.tool(
+    'get_review_digest',
+    'Portfolio review digest: one row per project with stall, next-action (Planned), deadline, and last-activity signals for fast GTD weekly-review triage. scope=due returns projects past their review date; scope=all-active returns every active project (use for the one-time backlog pass).',
+    {
+      scope: z.enum(['due', 'all-active']).default('due').describe('due = past review date; all-active = every active project'),
+      folderId: z.string().optional().describe('Restrict the scan to a single folder (area of responsibility)'),
+      includeOnHold: zBool().default(false).describe('Include on-hold (someday/maybe) projects'),
+      onlyStalled: zBool().default(false).describe('Only return projects with no available next action'),
+      limit: z.coerce.number().int().min(1).max(500).default(200).describe('Max projects to return'),
+      offset: z.coerce.number().int().min(0).default(0).describe('Pagination offset'),
+    },
+    async ({ scope, folderId, includeOnHold, onlyStalled, limit, offset }) => {
+      const output = await runAppleScript(
+        buildGetReviewDigestScript({ scope, folderId, includeOnHold, onlyStalled, limit, offset }),
+        60_000,
+      );
+      const result = parseReviewDigest(output);
       return { content: [{ type: 'text', text: compactJson(result) }] };
     },
   );
