@@ -120,14 +120,15 @@ export function registerReviewTools(server: McpServer): void {
       limit: z.coerce.number().int().min(1).max(100).default(20).describe('Max tasks to return'),
       minAgeDays: z.coerce.number().int().min(0).optional().describe('Only return tasks that have been waiting at least this many days (by defer date, else creation date)'),
       sortByAge: zBool().default(false).describe('Sort returned tasks oldest-waiting first'),
+      folderId: z.string().optional().describe('Restrict to tasks whose project lives in this folder (area of responsibility). Use to keep work and personal reviews separate.'),
     },
-    async ({ tagNames, limit, minAgeDays, sortByAge }) => {
+    async ({ tagNames, limit, minAgeDays, sortByAge, folderId }) => {
       const aging = sortByAge || minAgeDays !== undefined;
       // When aging, fetch a wider window so sort/filter sees more than the first `limit`
       // in list order. Caveat: tags with >500 incomplete tasks are truncated to 500 before
       // aging — acceptable for typical @waiting_for / person-tag lists.
       const fetchLimit = aging ? Math.max(limit, 500) : limit;
-      const output = await runAppleScript(buildGetTasksByTagScript(tagNames, fetchLimit), 30_000);
+      const output = await runAppleScript(buildGetTasksByTagScript(tagNames, fetchLimit, folderId), 30_000);
       const parsed = parsePaginatedTasks(output);
       if (!aging) {
         return { content: [{ type: 'text', text: compactJson(parsed) }] };
