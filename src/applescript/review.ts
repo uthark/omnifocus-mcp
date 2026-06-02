@@ -41,7 +41,7 @@ export function buildMarkProjectReviewedScript(projectId: string): string {
 tell application "OmniFocus"
   tell default document
     set proj to first flattened project whose id is "${escaped}"
-    mark reviewed proj
+    set last review date of proj to (current date)
     return id of proj
   end tell
 end tell`;
@@ -244,7 +244,7 @@ tell application "OmniFocus"
     repeat with pid in projIds
       try
         set proj to first flattened project whose id is (pid as text)
-        mark reviewed proj
+        set last review date of proj to (current date)
         set okCount to okCount + 1
       end try
     end repeat
