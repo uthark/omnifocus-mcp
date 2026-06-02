@@ -87,6 +87,10 @@ project so the entire portfolio is triageable in 1–2 calls instead of N×3.
 
 **Per-project output**
 - `id`, `name`, `folder`, `status`
+- `flagged` (bool) — read directly off the project; a flagged project warrants
+  more frequent review and is surfaced first (see Review prioritization).
+- `dueDate` + `daysUntilDue` — the project deadline, if any; deadline projects
+  are prioritized.
 - `incompleteCount`
 - `availableCount` (not completed, not blocked, defer date past/absent)
 - `plannedCount` — incomplete tasks tagged **`Planned`** (the user's next-action
@@ -97,23 +101,42 @@ project so the entire portfolio is triageable in 1–2 calls instead of N×3.
   tasks; fall back to project modification date)
 - `nextReviewDate` + `daysOverdueForReview`
 
+**Review prioritization (skill-side, using digest signals).** The digest returns
+the raw signals; the skill orders/escalates the review by them:
+- **Flagged projects → reviewed more often.** Surface them first regardless of
+  `nextReviewDate`, and offer to tighten their `reviewInterval`.
+- **Deadline projects → prioritized.** Sort by `daysUntilDue` ascending; an
+  approaching/overdue deadline jumps a project to the top of the queue.
+- Otherwise order by `daysOverdueForReview`, with `stalled` projects flagged for
+  attention within each tier.
+
 **Performance:** one AppleScript invocation; scanning tasks for
 `plannedCount` + `lastActivity` is heavier than the existing count-only scan.
 Use a 30s timeout (matching `get_stale_tasks` / `get_available_tasks`). If too
 slow at scale, gate `plannedCount`/`lastActivity` behind an `enrich` flag.
 
-### 4.2 Waiting-for aging
+### 4.2 Commitment aging (two directions)
 
-Surface delegated/waited-on tasks sorted by how long they've been waiting.
+Surface person/commitment tasks sorted by how long they've been sitting. There
+are **two opposite directions**, distinguished by the presence of the
+`waiting for` tag — and the skill acts differently on each:
+
+| Tags on the task                 | Meaning                                  | Follow-up action            |
+|----------------------------------|------------------------------------------|-----------------------------|
+| person tag **+** `waiting for`   | **Delegated** — you're waiting on them   | Chase the person            |
+| person tag, **no** `waiting for` | **Your commitment** — you owe that person | Do it / schedule / Planned  |
 
 **Decision:** extend the existing `get_tasks_by_tag` rather than add a new tool
-(YAGNI — it already returns creation/defer/modification dates). Add:
+(YAGNI — it already returns each task's tag list plus creation/defer/modification
+dates, which is enough to classify direction client-side). Add:
 - `minAgeDays`: only return tasks older than N days (server-side filter)
 - `sortByAge`: bool — sort descending by `daysWaiting`
 
 where `daysWaiting = now − (effective defer date if present else creation date)`.
-The skill passes the resolved waiting tag name (e.g. `waiting_for`) and/or person
-tags. Output adds a computed `daysWaiting` per task.
+The skill resolves the `waiting for` tag and the person tags (format `"First
+Last"`, via `get_tags`), queries them, and uses each returned task's tag list to
+classify direction (delegated vs owed) and choose the follow-up. Output adds a
+computed `daysWaiting` per task.
 
 ### 4.3 `batch_mark_reviewed` (optional)
 
@@ -130,15 +153,22 @@ hand off to `gtd-inbox-review` for inbox-zero.
 - **Backlog mode (one-time):** `get_review_digest scope=all-active` → bucket into
   *stalled / no-Planned-action / healthy*. Walk the stalled + decision-needed
   buckets one at a time; bulk-`mark_reviewed` the healthy remainder. 200 → clean.
-- **Weekly mode (steady-state):** same with `scope=due`; plus waiting-for aging
-  review and a "every active project has a `Planned` next action" check.
-- **Daily mode (light):** aging waiting-for + newly-stalled + flagged/forecast.
+- **Weekly mode (steady-state):** same with `scope=due`, **ordered by the §4.1
+  prioritization** (flagged + deadline first); plus commitment-aging review
+  (§4.2, both directions) and a "every active project has a `Planned` next
+  action" check.
+- **Daily mode (light):** aging commitments + newly-stalled + flagged/forecast.
   Complements the existing `daily-manager` skill.
 
 **Per-project decision options the skill offers:** add/confirm a `Planned` next
 action · mark complete (done) · move to `on hold` (someday/maybe) · drop ·
-`mark_reviewed` · for delegated items, create a follow-up task to check with the
-person.
+`mark_reviewed` · tighten `reviewInterval` (esp. flagged/deadline projects).
+
+**Commitment-aging actions (§4.2):**
+- *Delegated* (person + `waiting for`): create a follow-up task to chase the
+  person.
+- *Owed* (person tag, no `waiting for`): treat as your own next action — add a
+  `Planned` tag / schedule / do it.
 
 **Rules the skill MUST honor** (established user preferences — memory):
 - Never complete/delete without explicit per-item "y"; prefetched context is not
@@ -211,12 +241,17 @@ Follow existing patterns:
   optional.
 - Stall signal keys off **available next action**, and reports the user's
   **`Planned`** convention.
+- Review prioritization: **flagged** projects reviewed more often + surfaced
+  first; **deadline** projects sorted by `daysUntilDue` (§4.1).
+- Commitment aging has **two directions** (§4.2): delegated (`waiting for` →
+  chase) vs owed (bare person tag → your next action).
 - Cadence: **recurring Google Calendar event** + on-demand execution; remote
   `/schedule` ruled out (can't reach local OmniFocus).
 
 ## 12. Open Questions
 
-- Exact name of the waiting-for tag in the user's OmniFocus (skill resolves via
-  `get_tags` at runtime).
+- Waiting tag is **`waiting for`** (per user); skill still resolves exact
+  spelling/format via `get_tags` at runtime, and treats a bare person tag
+  (no `waiting for`) as a commitment *owed* (§4.2).
 - Daily mode: include or skip inbox-zero handoff to `gtd-inbox-review`?
 - Whether to ship `batch_mark_reviewed` in MVP or defer.
